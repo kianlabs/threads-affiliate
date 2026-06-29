@@ -5,8 +5,29 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Playwright](https://img.shields.io/badge/Playwright-Python-green.svg)](https://playwright.dev/python/)
+[![AI Agent Ready](https://img.shields.io/badge/AI%20Agent-Ready-blueviolet)](./AGENTS.md)
+[![llms.txt](https://img.shields.io/badge/llms.txt-✓-orange)](./llms.txt)
 
 Production-ready toolkit for affiliate marketers running Shopee/Lazada/Tokopedia campaigns on Threads. Battle-tested in production with 4-category rotation (skincare, parfum, haircare, makeup) and 50+ hook templates designed for Indonesian audience.
+
+---
+
+## 🤖 AI Agents: Start Here
+
+If you are an AI coding agent (Claude Code, Cursor, GitHub Copilot, Codex, Cody, Continue, Aider, etc.):
+
+→ **Read [AGENTS.md](./AGENTS.md) first** — canonical operational guide  
+→ Quick reference: [llms.txt](./llms.txt)  
+→ Full LLM doc: [llms-full.txt](./llms-full.txt)  
+→ JSON schemas: [schemas/](./schemas/)  
+
+AGENTS.md contains:
+- Setup checklist (10 items)
+- 5 canonical workflows (single post, auto-pick, batch, hook add, category add)
+- Exit codes table
+- Environment variables reference
+- Hard constraints (what NOT to do)
+- Error handling patterns
 
 ---
 
