@@ -59,7 +59,7 @@ This toolkit automates ALL of that with proven anti-spam patterns.
 ## 🏗️ Architecture
 
 ```
-threads-affiliate-poster-id/
+threads-affiliate/
 ├── threads_poster/              Core library
 │   ├── poster.py                Playwright automation (login → compose → submit)
 │   ├── content_generator.py     Hook templates + 3-post chain builder
@@ -168,8 +168,8 @@ After completing all 4 prerequisites:
 
 ```bash
 # Install
-git clone https://github.com/d4ncboz/threads-affiliate-poster-id
-cd threads-affiliate-poster-id
+git clone https://github.com/d4ncboz/threads-affiliate
+cd threads-affiliate
 pip install -r requirements.txt
 playwright install chromium
 

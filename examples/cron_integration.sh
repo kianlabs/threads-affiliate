@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cron integration for threads-affiliate-poster-id
+# Cron integration for threads-affiliate
 # Copy these lines to crontab via: crontab -e
 #
 # All times in server local timezone. Adjust if you want WIB (UTC+7).
@@ -8,7 +8,7 @@
 #   13:00 WIB → 06:00 UTC
 #   20:00 WIB → 13:00 UTC
 
-REPO_PATH="/path/to/threads-affiliate-poster-id"
+REPO_PATH="/path/to/threads-affiliate"
 
 # === Posting schedule (3x/day, different categories) ===
 

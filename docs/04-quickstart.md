@@ -14,8 +14,8 @@ Before starting, ensure:
 
 ```bash
 # Clone repo
-git clone https://github.com/d4ncboz/threads-affiliate-poster-id
-cd threads-affiliate-poster-id
+git clone https://github.com/d4ncboz/threads-affiliate
+cd threads-affiliate
 
 # Install dependencies
 pip install -r requirements.txt
