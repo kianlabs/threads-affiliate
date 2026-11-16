@@ -181,7 +181,7 @@ tidak ada request ke graph.threads.net).
 - `docs/laporan-sprint2-verifikasi.md` (baru) — dokumen ini.
 - Backup: `data/post_history.json.bak-20261117-<jam>` di PC sebelum
   perubahan (gitignored). Tools yang diubah ter-commit (git sebagai backup).
-- Commit: (diisi saat push) — remote HEAD terverifikasi.
+- Commit: `d4d8791` (`d4d879117e7a3034baf1be0b0841905bb845a666`) — remote HEAD terverifikasi 17 Nov 2026 ~01:05 WIB.
 
 ### Masalah yang belum selesai
 1. Repost Kikkoman v4 (DfzOch6n5SE) tidak lagi bisa diakses via API —
