@@ -12,7 +12,6 @@ build/
 venv/
 .venv/
 env/
-
 # IDE / OS
 .vscode/
 .idea/
@@ -20,7 +19,6 @@ env/
 .DS_Store
 Thumbs.db
 desktop.ini
-
 # === SENSITIF — JANGAN PERNAH DI-COMMIT ===
 # Cookie sesi = kunci login penuh akun Threads/IG. Bocor = akun diambil alih.
 *.cookies.json
@@ -33,7 +31,6 @@ sessions/
 *token*.env
 .env
 .env.*
-
 # === DATA PRIBADI — JANGAN DI-COMMIT ===
 # Berisi link affiliate + riwayat posting akun.
 data/affiliate_links.md
@@ -42,17 +39,14 @@ data/pinterest_history.json
 data/*.db
 data/output/
 data/product_images/
-
 # Logs (berisi URL post + potongan konten)
 logs/
 tmp/
-
 # Test artifacts
 /tmp/debug_*.png
 /tmp/threads_*.json
 /tmp/screenshot_*.png
 data/*.bak*
-
 data/comment_history.json
-
 data/video_publish_log.json
+data/subid_mapping.md
