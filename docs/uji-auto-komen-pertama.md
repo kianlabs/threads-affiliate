@@ -198,3 +198,37 @@ python3 tools/auto_comment.py --targets /tmp/targets-uji.txt --live
   komen), formula v2 (detail + bukti + pertanyaan pilihan), 100–200 karakter,
   maks 10 komen/hari, jeda acak 10–30 menit, tidak komen 2x di postingan yang
   sama, tidak komen di postingan sendiri.
+
+## Hasil LIVE — GAGAL (16 Nov 2026 20:08 WIB)
+
+> **STATUS: GAGAL — 0 komen terkirim. Kyan sudah menyetujui pengiriman
+> (20:06 WIB), tapi Threads API menolak. BERHENTI sesuai aturan: tidak
+> dicoba jalur lain (tanpa Playwright/cookie).**
+
+### Komen 1 — @ginakuhana / DfctjUKkmhz — GAGAL 20:08:47 WIB
+
+- Perintah: 
+- Dry-run sebelumnya: teks regenerasi PERSIS sama dengan yang disetujui (131 karakter, LOLOS).
+- Error 1 (cek pemilik, warning — tool lanjut kirim): 
+- Error 2 (kirim, fatal): 
+- Output tool: 
+- Tercatat di  (tidak di-commit): 1 entri, status , alasan = error 2 di atas.
+
+### Komen 2 — @inspirasi.rumah26 / Dfl11LgEXJY — TIDAK DIKIRIM
+
+- Tidak dicoba. Aturan tugas: kalau API error, BERHENTI — tidak coba jalur
+  lain. Kemungkinan besar gagal dengan error yang sama (masalahnya di
+  , bukan di target spesifik).
+
+### Dugaan penyebab (BELUM terverifikasi — perlu pengecekan, bukan klaim)
+
+-  mungkin butuh ID media numerik Threads, bukan kode pendek
+  publik ( adalah kode URL, bukan ID media API). Tool saat ini
+  memakai kode pendek langsung sebagai .
+- Error 400 saat GET postingan juga menandakan app (belum diterbitkan,
+  tanpa App Review) mungkin tidak bisa membaca postingan orang lain —
+  sejalan dengan  yang 403 sebelumnya.
+- Yang perlu dicek berikutnya (oleh developer, bukan dengan kirim ulang
+  buta): bagaimana cara dapat ID media numerik sebuah postingan Threads
+  (misal via oEmbed / tampilan web / endpoint lain), dan apakah scope
+   saja cukup untuk reply ke postingan orang lain.
