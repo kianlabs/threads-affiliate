@@ -52,3 +52,5 @@ tmp/
 /tmp/threads_*.json
 /tmp/screenshot_*.png
 data/*.bak*
+
+data/comment_history.json
