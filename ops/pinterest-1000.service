@@ -1,0 +1,9 @@
+[Unit]
+Description=Pinterest affiliate slot 10:00 (API v5, maks 1 Pin/hari)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/threads-affiliate-system
+ExecStart=%h/threads-affiliate-system/.venv/bin/python tools/run_pinterest.py
+StandardOutput=append:%h/threads-affiliate-system/logs/cron.log
+StandardError=append:%h/threads-affiliate-system/logs/cron.log

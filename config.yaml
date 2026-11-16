@@ -34,7 +34,9 @@ format_post:
                              # BUKAN di post utama. Jangan ubah ke 3 tanpa alasan.
   link_di_post_utama: false
   link_shortener_dilarang: ["bit.ly", "s.id", "tinyurl.com"]
-  disclosure_wajib: "#affiliate"   # harus muncul di tiap thread (post 2/CTA)
+  disclosure_wajib: "kalimat komisi tanpa kata 'affiliate'"  # aturan Kyan 16 Nov 17:56
+    # kata 'affiliate' (termasuk #affiliate / #ShopeeAffiliate) DILARANG di post.
+    # Disclosure wajib: "aku dapat komisi kalau kamu beli lewat link ini" (post 2/CTA).
   max_chars_per_post: 500    # batas Threads
 
 # Path (relatif terhadap root repo ini; cookies SELALU di luar repo)
@@ -57,9 +59,24 @@ fase2:
     status: "TERTAHAN — akun belum punya akses (AppID/Secret kosong, tombol Apply nonaktif)"
     catatan: "Link 'contact us' di halaman Open API nyasar ke artikel Help Center soal pelanggaran, bukan form pengajuan. Jalur yang tersisa: hubungi CS Shopee via live chat."
   threads_official_api:
-    status: "MENUNGGU — undangan tester app Meta 'TemuanHarian Threads API' belum diterima Kyan; App Review threads_content_publish belum diajukan"
+    status: "LIVE 16 Nov 2026 — token tersimpan ~/.threads_poster/threads_token.env (mode 600)"
+    post_pertama: "17:51 Kikkoman, terverifikasi via API; systemd timer 09:00/12:30/19:30 AKTIF (run_slot.py --api)"
   ai_drafting:
     status: "RENCANA — draf AI via provider gratis 9Router (bukan template statis)"
+
+# Pinterest (DITAMBAH 16 Nov 2026 — MODUL SIAP, TOKEN BELUM ADA)
+# Akun: Yozo (@dirtoflegend) — sudah terhubung ke Shopee Affiliate 'pratama'
+# (17 Nov 2026, dikonfirmasi Kyan). Tagging produk native dilakukan MANUAL
+# di aplikasi Pinterest (API v5 tidak bisa tagging). Timer DISABLED sampai
+# token + dry-run lolos (lihat docs/pinterest.md).
+pinterest:
+  status: "MODUL SIAP — token BELUM ADA (dry-run saja)"
+  akun: "Yozo (@dirtoflegend)"
+  board_id: ""             # isi setelah buat board di Pinterest (mis. board home living/kos)
+  max_pins_per_day: 1      # Pinterest melarang Pin afiliasi "repetitif / jumlah besar"
+  jadwal: "10:00"          # timer systemd DISABLED (ops/pinterest-1000.timer)
+  disclosure: "#ad di awal deskripsi + kalimat komisi tanpa kata 'affiliate'"
+  token_path: "~/.pinterest_poster/pinterest_token.env"
 
 # Facebook (DITAMBAH 16 Nov atas perintah Kyan — BELUM AKTIF)
 facebook:

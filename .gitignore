@@ -30,6 +30,7 @@ cookies/
 sessions/
 *.session
 *token*.json
+*token*.env
 .env
 .env.*
 
@@ -37,6 +38,7 @@ sessions/
 # Berisi link affiliate + riwayat posting akun.
 data/affiliate_links.md
 data/post_history.json
+data/pinterest_history.json
 data/*.db
 data/output/
 data/product_images/
@@ -49,3 +51,4 @@ tmp/
 /tmp/debug_*.png
 /tmp/threads_*.json
 /tmp/screenshot_*.png
+data/*.bak*

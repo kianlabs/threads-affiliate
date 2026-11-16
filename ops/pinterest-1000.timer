@@ -1,0 +1,10 @@
+[Unit]
+Description=Jadwal Pinterest affiliate 10:00 WIB (DISABLED sampai token + dry-run lolos)
+
+[Timer]
+OnCalendar=*-*-* 10:00:00
+RandomizedDelaySec=900
+Persistent=true
+
+[Install]
+WantedBy=timers.target

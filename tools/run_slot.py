@@ -20,6 +20,7 @@ Penggunaan:
   python tools/run_slot.py --slot 09:00            # posting beneran
   python tools/run_slot.py --slot 09:00 --dry-run  # generate + cek saja
   python tools/run_slot.py --category dapur --dry-run
+  python tools/run_slot.py --slot 09:00 --api      # posting via Threads API
 """
 from __future__ import annotations
 
@@ -27,6 +28,7 @@ import argparse
 import sys
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parent.parent
 VENDOR = ROOT / "vendor" / "threads-affiliate"
@@ -69,6 +71,8 @@ def main() -> int:
                     help="Generate + cek saja, jangan posting")
     ap.add_argument("--headed", action="store_true",
                     help="Browser terlihat (debug)")
+    ap.add_argument("--api", action="store_true",
+                    help="Posting via Threads API resmi (bukan Playwright)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -104,8 +108,15 @@ def main() -> int:
             log_path)
         return 1
 
-    # --- 1. Validasi cookies (bukan dry-run) ---
-    if not args.dry_run:
+    # --- 1. Validasi kredensial posting (bukan dry-run) ---
+    if not args.dry_run and args.api:
+        token_path = Path(
+            "~/.threads_poster/threads_token.env").expanduser()
+        if not token_path.exists():
+            log(f"❌ Token Threads API tidak ditemukan: {token_path}",
+                log_path)
+            return 2
+    if not args.dry_run and not args.api:
         if not cookies_path.exists():
             log(f"❌ Cookie tidak ditemukan: {cookies_path} "
                 f"(jalankan: setup --extract-cookies)", log_path)
@@ -113,9 +124,19 @@ def main() -> int:
         from threads_poster.cookie_manager import validate_cookies
         ok, details = validate_cookies(cookies_path)
         if not ok:
-            log(f"❌ Cookie tidak valid: {details.get('error', '?')} "
-                f"(refresh: setup --extract-cookies)", log_path)
-            return 2
+            err = details.get('error', '?')
+            if err.startswith('HTTP 429'):
+                # Endpoint web_profile_info sering 429 untuk request urllib
+                # MESKI cookie valid (terbukti 16 Nov 2026: sesi hidup di
+                # browser, validator balas 429). 429 = "tak bisa dipastikan",
+                # bukan "tidak valid" — lanjut, sesi dicek lagi di browser
+                # oleh poster; bila sesi memang mati, posting gagal di sana.
+                log("⚠️ Validasi cookie kena rate-limit (HTTP 429) — lanjut, "
+                    "sesi dicek lagi di browser.", log_path)
+            else:
+                log(f"❌ Cookie tidak valid: {err} "
+                    f"(refresh: setup --extract-cookies)", log_path)
+                return 2
 
     # --- 2. Ambil link UNUSED ---
     db = AffiliateDatabase(db_path)
@@ -128,16 +149,35 @@ def main() -> int:
     log(f"📦 {category}: {product} | {link}", log_path)
 
     # --- 3. Generate rantai 2 post (templates v1) ---
+    # Jalur API: link sudah ditempel di post 2 SEBELUM guardrails, supaya
+    # yang dicek/dikirim adalah teks final (batas 500 karakter termasuk
+    # link). Varian diacak — coba sampai 5x sampai ada yang muat.
     gen = ContentGenerator(templates_dir)
-    chain = gen.generate_chain(
-        product=product, affiliate_link=link, category=category,
-        num_posts=2,
-    )
-    # Post 2 = isi "intip produk" + CTA + disclosure (bukan CTA saja).
-    body = gen.generate_post2(product, category)
-    post_1 = chain["post_1"]
-    post_2 = f"{body}\n\n{chain['post_2']}"
-    posts = [post_1, post_2]
+    attempts = 5 if args.api else 1
+    for attempt in range(attempts):
+        chain = gen.generate_chain(
+            product=product, affiliate_link=link, category=category,
+            num_posts=2,
+        )
+        # Post 2 = isi "intip produk" + CTA + disclosure (bukan CTA saja).
+        body = gen.generate_post2(product, category)
+        post_1 = chain["post_1"]
+        post_2 = f"{body}\n\n{chain['post_2']}"
+        posts = [post_1, post_2]
+        if args.api:
+            posts[1] = f"{post_2}\n{link}"
+            if len(posts[0]) <= 500 and len(posts[1]) <= 500:
+                post_1, post_2 = posts
+                break
+            log(f"⚠️ Percobaan {attempt + 1}: rantai "
+                f"{len(posts[0])}/{len(posts[1])} karakter "
+                f"(maks 500) — coba varian lain.", log_path)
+            continue
+        break
+    else:
+        log("BATAL: tidak ada varian rantai yang muat 500 karakter "
+            "setelah 5 percobaan.", log_path)
+        return 1
 
     # --- 4. Guardrails (WAKIL approval manusia) ---
     problems = check_chain(posts, link)
@@ -165,24 +205,48 @@ def main() -> int:
         print("\n----- DRY RUN — rantai yang akan diposting -----")
         for i, t in enumerate(posts, start=1):
             print(f"\n--- post {i} ({len(t)} karakter) ---\n{t}")
-        print(f"\nLink (ditempel di post 2): {link}")
+        if not args.api:
+            # Jalur API: link sudah ada di dalam teks post 2.
+            print(f"\nLink (ditempel di post 2): {link}")
         print("\n✅ DRY RUN LOLOS (tidak posting, database tidak diubah).")
         return 0
 
     # --- 6. Posting ---
-    from threads_poster.poster import ThreadsPoster
-    poster = ThreadsPoster(cookies_path=cookies_path,
-                           headless=not args.headed)
-    result = poster.post(
-        product=product,
-        affiliate_link=link,
-        hook_text=post_1,
-        post_2=post_2,
-        post_3=None,
-        hook_category=chain["hook_category"],
-        category=category,
-        username=username,
-    )
+    if args.api:
+        from publish_api import publish_text
+        # post_2 sudah berisi link (ditempel di langkah 3, jalur API).
+        if len(post_1) > 500 or len(post_2) > 500:
+            log(f"BATAL: teks final API melebihi 500 karakter "
+                f"(post1={len(post_1)}, post2={len(post_2)}).", log_path)
+            return 1
+        try:
+            r1 = publish_text(post_1)
+            r2 = publish_text(post_2, reply_to=r1["id"])
+        except Exception as e:
+            log(f"❌ Posting API gagal: {e}", log_path)
+            return 5
+        result = SimpleNamespace(
+            success=True, error=None,
+            timestamp=datetime.now().isoformat(),
+            hook_category=chain["hook_category"],
+            hook_text=chain["hook_text"],
+            product=product, affiliate_link=link, num_posts=2,
+            post_url=r1["permalink"],
+        )
+    else:
+        from threads_poster.poster import ThreadsPoster
+        poster = ThreadsPoster(cookies_path=cookies_path,
+                               headless=not args.headed)
+        result = poster.post(
+            product=product,
+            affiliate_link=link,
+            hook_text=post_1,
+            post_2=post_2,
+            post_3=None,
+            hook_category=chain["hook_category"],
+            category=category,
+            username=username,
+        )
 
     if not result.success:
         log(f"❌ Posting gagal: {result.error}", log_path)

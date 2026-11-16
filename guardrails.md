@@ -35,13 +35,26 @@ Dilarang: "dijamin", "pasti" (hasil), "100% ampuh", "terjamin", "paling murah",
 
 Yang boleh: harga + rating + jumlah terjual apa adanya dari listing.
 
-## 4. Disclosure — wajib di tiap thread
+## 4. Disclosure — wajib di tiap thread (tanpa kata "affiliate")
 
-Tiap thread WAJIB memuat salah satu, di post CTA:
+Aturan Kyan 16 Nov 2026 17:56: kata "affiliate" DILARANG muncul di post yang
+terlihat publik — termasuk `#affiliate` dan `#ShopeeAffiliate`. `check_draft.py`
+menolak post yang mengandung kata itu (parameter `affiliate_id` di URL link
+dikecualikan: itu atribusi komisi, bukan teks yang dibaca pembaca).
 
-- `#affiliate`, atau
-- `#ShopeeAffiliate`, atau
-- kalimat: "Link affiliate — aku dapat komisi kalau kamu beli lewat link ini, tanpa nambah harga buat kamu."
+Tiap thread WAJIB memuat kalimat komisi ini, di post CTA:
+
+- "Kalau kamu beli lewat link ini, aku dapat komisi." (tanpa biaya tambahan
+  buat kamu — boleh ditambah, tapi tanpa kata "affiliate".)
+
+## 4b. Disclosure Pinterest — "#ad" di awal deskripsi
+
+Pin Pinterest WAJIB diawali `#ad` di deskripsi (aturan Pinterest: disclosure
+harus terlihat sebelum deskripsi terpotong), diikuti kalimat komisi yang sama
+seperti di atas — juga tanpa kata "affiliate". Contoh: "#ad {produk} — ...
+Aku dapat komisi kalau kamu beli lewat link ini, tanpa biaya tambahan buat
+kamu." Tagging produk Shopee dilakukan MANUAL di aplikasi Pinterest
+(kemitraan resmi Shopee x Pinterest); API v5 tidak bisa tagging.
 
 ## 5. Batas teknis Threads
 
