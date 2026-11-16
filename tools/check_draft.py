@@ -17,7 +17,9 @@ Aturan yang dicek (lihat guardrails.md):
      yang terlihat (aturan Kyan 16 Nov 2026 18:50) — TIDAK ADA disclosure
      komisi di teks post. Parameter affiliate_id di URL link dikecualikan
      (atribusi, bukan teks yang dibaca pembaca).
-  5. Maks 500 karakter per post.
+  5. Maks 500 karakter per post (batas absolut platform Threads).
+     Target operasional: maks 470 karakter per post — 471–500 hanya
+     peringatan (WARN), bukan penolakan (aturan Sprint 2, 17 Nov 2026).
   6. Link harus s.shopee.co.id / shope.ee; shortener lain dilarang.
   7. Hook sebaiknya <= 80 karakter (peringatan, bukan error).
 
@@ -69,10 +71,19 @@ GUARANTEE_PATTERNS = [
 BANNED_SHORTENERS = ["bit.ly", "s.id", "tinyurl.com", "goo.gl", "t.co"]
 ALLOWED_LINK_HOSTS = ["s.shopee.co.id", "shope.ee"]
 URL_RE = re.compile(r"https?://[^\s)\"']+")
+# Batas panjang post (Sprint 2, 17 Nov 2026):
+# - MAX_POST_CHARS = 500: batas absolut platform Threads (ERROR bila lewat).
+# - OPERATIONAL_MAX_CHARS = 470: target operasional — 471-500 karakter
+#   hanya peringatan (WARN "panjang-operasional"), post tetap boleh terbit.
+#   Alasan: menyisakan margin 30 karakter untuk variasi template/link
+#   supaya retry 5x di run_slot.py jarang mentok di batas absolut.
 # Kata terlarang di teks yang terlihat (aturan Kyan 16 Nov 2026 18:50).
 # URL dikecualikan dari cek ini (parameter affiliate_id wajib untuk atribusi).
 BANNED_WORD_RE = re.compile(r"\b(komisi|commission|affiliate)\b", re.I)
 AFFILIATE_WORD_RE = BANNED_WORD_RE
+
+MAX_POST_CHARS = 500            # batas absolut platform Threads
+OPERATIONAL_MAX_CHARS = 470     # target operasional (Sprint 2)
 
 REVIEW_RES = [re.compile(p, re.I) for p in REVIEW_PATTERNS]
 GUARANTEE_RES = [re.compile(p, re.I) for p in GUARANTEE_PATTERNS]
@@ -134,12 +145,18 @@ def check_chain(posts: list[str], affiliate_link: str = "") -> list[dict]:
     # 'commission' / 'affiliate' di teks yang terlihat langsung ditolak.
     # Tidak ada lagi kewajiban menulis kalimat komisi.
 
-    # 5. Batas 500 karakter
+    # 5. Batas 500 karakter (absolut) + target operasional 470 (peringatan)
     for i, text in enumerate(posts, start=1):
-        if len(text) > 500:
+        if len(text) > MAX_POST_CHARS:
             problems.append({
                 "level": "ERROR", "rule": "panjang-post",
                 "detail": f"Post {i}: {len(text)} karakter (maks 500).",
+            })
+        elif len(text) > OPERATIONAL_MAX_CHARS:
+            problems.append({
+                "level": "WARN", "rule": "panjang-operasional",
+                "detail": f"Post {i}: {len(text)} karakter "
+                          f"(target operasional maks 470, absolut 500).",
             })
 
     # 6. Validasi link

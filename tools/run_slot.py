@@ -10,9 +10,16 @@ Alur v1:
        di post ini (self-reply pertama).
   5. check_draft.py: pelanggaran -> BATAL, exit 1, tidak posting,
      tidak menandai link USED.
+  5b. Idempotency (Sprint 2): content_id + sub_id sudah ada di history
+      (status apa pun) -> BATAL, exit 3 — cegah double-post saat retry
+      setelah timeout.
   6. Dedup check: ditolak -> BATAL, exit 3.
-  7. Posting via vendor ThreadsPoster (Playwright + cookie).
-  8. Sukses -> catat history + tandai link USED. Gagal -> exit 5.
+  7. Posting via vendor ThreadsPoster (Playwright + cookie) atau API.
+  8. Sukses -> catat history DENGAN RECEIPT LENGKAP (media_id,
+     permalink, product_id, content_id, sub_id, published_at,
+     platform, status) + tandai link USED. Tanpa media_id status
+     TIDAK BOLEH 'posted' (Sprint 2). Gagal setelah post 1 terbit ->
+     catat 'publish_interrupted', link TIDAK ditandai USED, exit 5.
 
 JANGAN pernah pakai --force. Tidak ada flag itu di sini.
 
@@ -25,10 +32,11 @@ Penggunaan:
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from types import SimpleNamespace
+from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
 VENDOR = ROOT / "vendor" / "threads-affiliate"
@@ -57,6 +65,127 @@ def load_config(path: Path) -> dict:
         print(f"❌ config tidak ditemukan: {path}")
         sys.exit(1)
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+# --- Sprint 2: receipt + idempotency --------------------------------------
+# Aturan: media_id + permalink adalah bukti terbit. Tanpa media_id, status
+# TIDAK BOLEH "posted" (lihat validate_receipt). Kunci idempotency adalah
+# pasangan (content_id, sub_id) — dicek SEBELUM publish supaya retry /
+# slot berikutnya tidak double-post.
+
+def slugify_product(product: str) -> str:
+    """Slug produk dari kata pertama nama produk (huruf+angka, maks 16).
+    Contoh: 'Kikkoman Soy ...' -> 'kikkoman'; 'BONBOX Mop ...' -> 'bonbox'.
+    Dua baris historis di performance.csv memakai slug buatan tangan
+    ('bonboxmop') — dipertahankan apa adanya, tidak diubah."""
+    first = (product or "").split()[0] if (product or "").split() else "produk"
+    slug = re.sub(r"[^a-z0-9]", "", first.lower())
+    return slug[:16] or "produk"
+
+
+def parse_link_ids(affiliate_link: str) -> tuple[str | None, str | None]:
+    """Ambil (product_id, sub_id) dari link an_redir.
+    product_id = 'P-<shop>-<item>' dari origin_link; sub_id = token slot 1
+    dari parameter sub_id (format 'TOKEN----'). Kembalikan (None, None)
+    bila tidak bisa diparse — pemanggil wajib menangani."""
+    try:
+        q = parse_qs(urlparse(affiliate_link).query)
+        origin = unquote(q.get("origin_link", [""])[0])
+        m = re.search(r"shopee\.co\.id/product/(\d+)/(\d+)", origin)
+        product_id = f"P-{m.group(1)}-{m.group(2)}" if m else None
+        sub_raw = q.get("sub_id", [""])[0]
+        sub_id = sub_raw.split("-")[0] or None
+        return product_id, sub_id
+    except Exception:
+        return None, None
+
+
+def build_content_id(product: str, platform: str,
+                     date_str: str) -> str:
+    """content_id = '<slug>-<platform>-<yyyymmdd>' (skema Sprint 1 §3).
+    date_str = tanggal publikasi aktual (bukan tanggal Sub-ID)."""
+    return f"{slugify_product(product)}-{platform}-{date_str}"
+
+
+def _entry_sub_id(entry: dict) -> str | None:
+    """Sub-ID sebuah entri history — dari kolom sub_id, atau diparse dari
+    affiliate_link-nya (entri lama sebelum Sprint 2 tidak punya kolom)."""
+    if entry.get("sub_id"):
+        return entry["sub_id"]
+    _, sub_id = parse_link_ids(entry.get("affiliate_link", ""))
+    return sub_id
+
+
+def find_existing_publication(history: list[dict], content_id: str,
+                              sub_id: str | None) -> dict | None:
+    """Cari publikasi sebelumnya dengan content_id ATAU sub_id yang sama,
+    dalam status APAPUN (posted / posted_receipt_incomplete /
+    publish_interrupted). Ada = JANGAN publish ulang."""
+    for entry in history:
+        if entry.get("content_id") and entry.get("content_id") == content_id:
+            return entry
+        if sub_id and _entry_sub_id(entry) == sub_id:
+            return entry
+    return None
+
+
+def validate_receipt(r1: dict | None, r2: dict | None) -> tuple[str, list[str]]:
+    """Tentukan status dari hasil publish API (post 1 + reply post 2).
+
+    - 'posted': kedua media_id ada DAN kedua permalink terverifikasi API.
+    - 'posted_receipt_incomplete': kedua media_id ada (post TERBUKTI terbit)
+      tapi ada permalink yang belum terverifikasi — JANGAN ditulis 'posted'.
+    - 'receipt_failed': ada media_id yang hilang — pencatatan 'posted'
+      DILARANG; pemanggil harus mencatat 'publish_interrupted' + error.
+    """
+    reasons: list[str] = []
+    for label, r in (("post 1", r1), ("post 2", r2)):
+        if not r or not r.get("id"):
+            reasons.append(f"{label}: media_id tidak didapat dari API")
+        elif not r.get("permalink_verified"):
+            reasons.append(f"{label}: permalink belum terverifikasi "
+                           f"(media_id {r.get('id')})")
+    if any(not r or not r.get("id") for r in (r1, r2)):
+        return "receipt_failed", reasons
+    if reasons:
+        return "posted_receipt_incomplete", reasons
+    return "posted", []
+
+
+def build_history_entry(*, date: str, hook_category: str, hook_text: str,
+                        product: str, affiliate_link: str, num_posts: int,
+                        category: str, status: str, platform: str,
+                        product_id: str | None, content_id: str,
+                        sub_id: str | None, published_at: str | None,
+                        media_id: str | None, permalink: str | None,
+                        media_id_reply: str | None = None,
+                        permalink_reply: str | None = None,
+                        error: str | None = None) -> dict:
+    """Satu entri history dengan receipt lengkap (Sprint 2).
+    Kolom lama dipertahankan apa adanya demi kompatibilitas."""
+    entry = {
+        "date": date,
+        "hook_category": hook_category,
+        "hook_text": hook_text,
+        "product": product,
+        "affiliate_link": affiliate_link,
+        "num_posts": num_posts,
+        "category": category,
+        "status": status,
+        # --- Sprint 2: receipt wajib ---
+        "platform": platform,
+        "product_id": product_id,
+        "content_id": content_id,
+        "sub_id": sub_id,
+        "published_at": published_at,
+        "media_id": media_id,
+        "permalink": permalink,
+        "media_id_reply": media_id_reply,
+        "permalink_reply": permalink_reply,
+    }
+    if error:
+        entry["error"] = error
+    return entry
 
 
 def main() -> int:
@@ -99,9 +228,13 @@ def main() -> int:
     # --- 0. Batas harian (pengaman) ---
     dedup = DedupChecker(history_path)
     today = datetime.now().date().isoformat()
+    # Status yang dihitung sebagai "sudah terbit hari ini": posted +
+    # posted_receipt_incomplete (post-nya TERBUKTI terbit via media_id).
+    # publish_interrupted TIDAK dihitung (rantai tidak lengkap).
     posted_today = sum(
         1 for p in dedup.load()
-        if str(p.get("date", ""))[:10] == today and p.get("status") == "posted"
+        if str(p.get("date", ""))[:10] == today
+        and p.get("status") in ("posted", "posted_receipt_incomplete")
     )
     if posted_today >= max_per_day:
         log(f"BATAL: sudah {posted_today} post hari ini (maks {max_per_day}).",
@@ -147,6 +280,20 @@ def main() -> int:
         return 4
     category = detected or category
     log(f"📦 {category}: {product} | {link}", log_path)
+
+    # --- 2b. Identitas publikasi (Sprint 1 + 2) ---
+    # product_id + sub_id diparse dari link; content_id memakai TANGGAL
+    # PUBLIKASI AKTUAL (hari ini), bukan tanggal Sub-ID (tanggal link
+    # dibuat) — lihat docs/skema-id-dan-subid.md §2.
+    product_id, sub_id = parse_link_ids(link)
+    publish_date = datetime.now().date().strftime("%Y%m%d")
+    content_id = build_content_id(product, "threads", publish_date)
+    if not product_id or not sub_id:
+        log("❌ BATAL: tidak bisa parse product_id/sub_id dari link "
+            f"(product_id={product_id}, sub_id={sub_id}).", log_path)
+        return 1
+    log(f"🆔 product_id={product_id} | sub_id={sub_id} | "
+        f"content_id={content_id}", log_path)
 
     # --- 3. Generate rantai 2 post (templates v1) ---
     # Jalur API: link sudah ditempel di post 2 SEBELUM guardrails, supaya
@@ -201,6 +348,19 @@ def main() -> int:
         log(f"BATAL: dedup menolak: {reason}", log_path)
         return 3
 
+    # --- 5b. Idempotency (Sprint 2): content_id + sub_id ---
+    # Cek SEBELUM publish: bila content_id/sub_id ini sudah pernah
+    # dicoba/diterbitkan (status apa pun), JANGAN publish ulang —
+    # kemungkinan retry setelah timeout / slot yang tumpang tindih.
+    # Verifikasi manual dulu bila ini muncul.
+    existing = find_existing_publication(dedup.load(), content_id, sub_id)
+    if existing:
+        log(f"BATAL: idempotency — content_id {content_id} / sub_id "
+            f"{sub_id} sudah ada di history (status "
+            f"'{existing.get('status')}', {existing.get('date')}). "
+            f"Jangan retry otomatis; verifikasi manual dulu.", log_path)
+        return 3
+
     if args.dry_run:
         print("\n----- DRY RUN — rantai yang akan diposting -----")
         for i, t in enumerate(posts, start=1):
@@ -211,7 +371,14 @@ def main() -> int:
         print("\n✅ DRY RUN LOLOS (tidak posting, database tidak diubah).")
         return 0
 
-    # --- 6. Posting ---
+    # --- 6. Posting (Sprint 2: receipt + anti double-post) ---
+    # Aturan: TANPA media_id tidak ada status 'posted'. Bila publish
+    # gagal SETELAH post 1 terbit, catat 'publish_interrupted' (link
+    # TIDAK ditandai USED) dan JANGAN retry otomatis — verifikasi manual.
+    published_at = None
+    media_id = media_id_reply = permalink = permalink_reply = None
+    receipt_status: str | None = None
+    receipt_reasons: list[str] = []
     if args.api:
         from publish_api import publish_text
         # post_2 sudah berisi link (ditempel di langkah 3, jalur API).
@@ -219,20 +386,63 @@ def main() -> int:
             log(f"BATAL: teks final API melebihi 500 karakter "
                 f"(post1={len(post_1)}, post2={len(post_2)}).", log_path)
             return 1
+        r1 = r2 = None
         try:
             r1 = publish_text(post_1)
             r2 = publish_text(post_2, reply_to=r1["id"])
         except Exception as e:
-            log(f"❌ Posting API gagal: {e}", log_path)
+            publish_error = f"{type(e).__name__}: {e}"
+            if r1 and r1.get("id"):
+                # Post 1 SUDAH TERBIT, rantai tidak lengkap.
+                entry = build_history_entry(
+                    date=datetime.now().isoformat(),
+                    hook_category=chain["hook_category"],
+                    hook_text=chain["hook_text"], product=product,
+                    affiliate_link=link, num_posts=2, category=category,
+                    status="publish_interrupted", platform="threads",
+                    product_id=product_id, content_id=content_id,
+                    sub_id=sub_id, published_at=datetime.now().isoformat(),
+                    media_id=r1.get("id"), permalink=r1.get("permalink"),
+                    error=f"{publish_error} | post 1 SUDAH TERBIT "
+                          f"(media_id {r1.get('id')}) tapi reply gagal — "
+                          f"verifikasi manual sebelum aksi apa pun",
+                )
+                dedup.record(entry)
+                log(f"❌ Posting API gagal SETELAH post 1 terbit: "
+                    f"{publish_error} | post 1 media_id={r1.get('id')} "
+                    f"permalink={r1.get('permalink')} — dicatat "
+                    f"'publish_interrupted', link TIDAK ditandai USED, "
+                    f"JANGAN retry otomatis.", log_path)
+                return 5
+            log(f"❌ Posting API gagal (belum ada post terbit): "
+                f"{publish_error}", log_path)
             return 5
-        result = SimpleNamespace(
-            success=True, error=None,
-            timestamp=datetime.now().isoformat(),
-            hook_category=chain["hook_category"],
-            hook_text=chain["hook_text"],
-            product=product, affiliate_link=link, num_posts=2,
-            post_url=r1["permalink"],
-        )
+        receipt_status, receipt_reasons = validate_receipt(r1, r2)
+        if receipt_status == "receipt_failed":
+            # media_id hilang — pencatatan 'posted' DILARANG.
+            entry = build_history_entry(
+                date=datetime.now().isoformat(),
+                hook_category=chain["hook_category"],
+                hook_text=chain["hook_text"], product=product,
+                affiliate_link=link, num_posts=2, category=category,
+                status="publish_interrupted", platform="threads",
+                product_id=product_id, content_id=content_id,
+                sub_id=sub_id, published_at=None,
+                media_id=(r1 or {}).get("id"),
+                permalink=(r1 or {}).get("permalink"),
+                media_id_reply=(r2 or {}).get("id"),
+                permalink_reply=(r2 or {}).get("permalink"),
+                error="RECEIPT GAGAL: " + "; ".join(receipt_reasons),
+            )
+            dedup.record(entry)
+            log(f"❌ RECEIPT GAGAL: {'; '.join(receipt_reasons)} — "
+                f"dicatat 'publish_interrupted', link TIDAK ditandai "
+                f"USED. Verifikasi manual dulu.", log_path)
+            return 5
+        media_id, permalink = r1["id"], r1.get("permalink")
+        media_id_reply, permalink_reply = r2["id"], r2.get("permalink")
+        published_at = datetime.now().isoformat()
+        post_url = permalink
     else:
         from threads_poster.poster import ThreadsPoster
         poster = ThreadsPoster(cookies_path=cookies_path,
@@ -247,28 +457,67 @@ def main() -> int:
             category=category,
             username=username,
         )
-
-    if not result.success:
-        log(f"❌ Posting gagal: {result.error}", log_path)
-        return 5
+        if not result.success:
+            log(f"❌ Posting gagal: {result.error}", log_path)
+            return 5
+        # Playwright tidak mengembalikan media_id — receipt per definisi
+        # tidak lengkap (bukan 'posted'), walau post_url ada.
+        published_at = result.timestamp
+        permalink = result.post_url
+        if permalink:
+            receipt_status = "posted_receipt_incomplete"
+            receipt_reasons = [
+                "Playwright: media_id tidak tersedia (bukan API resmi)"]
+        else:
+            entry = build_history_entry(
+                date=datetime.now().isoformat(),
+                hook_category=chain["hook_category"],
+                hook_text=chain["hook_text"], product=product,
+                affiliate_link=link, num_posts=2, category=category,
+                status="publish_interrupted", platform="threads",
+                product_id=product_id, content_id=content_id,
+                sub_id=sub_id, published_at=None,
+                media_id=None, permalink=None,
+                error="Playwright sukses tapi post_url kosong — "
+                      "status terbit tidak bisa diverifikasi",
+            )
+            dedup.record(entry)
+            log("❌ RECEIPT GAGAL: Playwright sukses tapi post_url kosong "
+                "— dicatat 'publish_interrupted', link TIDAK ditandai "
+                "USED. Verifikasi manual dulu.", log_path)
+            return 5
+        post_url = permalink
 
     # --- 7. Catat + tandai USED ---
-    dedup.record({
-        "date": result.timestamp,
-        "hook_category": result.hook_category,
-        "hook_text": result.hook_text,
-        "product": result.product,
-        "affiliate_link": result.affiliate_link,
-        "num_posts": result.num_posts,
-        "category": category,
-        "status": "posted",
-    })
+    # Link ditandai USED HANYA bila post TERBUKTI terbit (media_id ada):
+    # status 'posted' atau 'posted_receipt_incomplete'. 'receipt_failed'
+    # / 'publish_interrupted' sudah return di atas dan tidak sampai sini.
+    entry = build_history_entry(
+        date=published_at or datetime.now().isoformat(),
+        hook_category=chain["hook_category"],
+        hook_text=chain["hook_text"], product=product,
+        affiliate_link=link, num_posts=2, category=category,
+        status=receipt_status or "posted_receipt_incomplete",
+        platform="threads", product_id=product_id,
+        content_id=content_id, sub_id=sub_id,
+        published_at=published_at, media_id=media_id,
+        permalink=permalink, media_id_reply=media_id_reply,
+        permalink_reply=permalink_reply,
+        error="; ".join(receipt_reasons) if receipt_reasons else None,
+    )
+    dedup.record(entry)
     try:
-        db.mark_used(link, note=f"{result.hook_category} hook")
+        db.mark_used(link, note=f"{chain['hook_category']} hook")
     except Exception as e:
         log(f"⚠️  Post terkirim tapi gagal menandai USED: {e}", log_path)
-    log(f"✅ Terkirim: {product} | {result.post_url or '(URL tidak terverifikasi)'}",
-        log_path)
+    if receipt_status == "posted":
+        log(f"✅ Terkirim: {product} | {post_url}", log_path)
+    else:
+        log(f"⚠️ Terkirim tapi RECEIPT TIDAK LENGKAP: {product} | "
+            f"{post_url or '(tanpa permalink)'} | "
+            f"{'; '.join(receipt_reasons)} | media_id={media_id} — "
+            f"verifikasi manual via API (get_media) sebelum posting "
+            f"berikutnya.", log_path)
     return 0
 
 

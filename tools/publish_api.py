@@ -77,7 +77,13 @@ def _get(path: str, params: dict) -> dict:
 
 
 def _publish_container(cid: str, wait_s: int) -> dict:
-    """Poll container sampai FINISHED lalu publish. Kembalikan id+permalink."""
+    """Poll container sampai FINISHED lalu publish. Kembalikan
+    {'id', 'permalink', 'permalink_verified'}.
+
+    Sprint 2: permalink TIDAK PERNAH difabrikasi. Bila GET permalink gagal
+    (2x percobaan), kembalikan permalink=None + verified=False — pencatat
+    di run_slot.py yang memutuskan statusnya (bukan 'posted').
+    """
     deadline = time.time() + wait_s
     while True:
         st = _get(f"/{cid}", {"fields": "status"})
@@ -92,20 +98,34 @@ def _publish_container(cid: str, wait_s: int) -> dict:
         time.sleep(2)
     pub = _post("/me/threads_publish", {"creation_id": cid})
     pid = pub["id"]
-    try:
-        permalink = _get(f"/{pid}", {"fields": "permalink"}).get("permalink")
-    except Exception:
-        permalink = None
-    return {
-        "id": pid,
-        "permalink": permalink
-        or f"https://www.threads.com/@{USERNAME}/post/{pid}",
-    }
+    permalink = None
+    verified = False
+    for attempt in range(2):
+        try:
+            permalink = _get(f"/{pid}", {"fields": "permalink"}).get("permalink")
+            if permalink:
+                verified = True
+                break
+        except Exception:
+            if attempt == 0:
+                time.sleep(2)
+    return {"id": pid, "permalink": permalink, "permalink_verified": verified}
+
+
+def get_media(media_id: str) -> dict:
+    """Baca satu media via API (read-only, untuk verifikasi manual).
+    Kembalikan {'id', 'permalink', 'timestamp'} bila ada; raise bila
+    media tidak ditemukan / tidak bisa diakses (mis. sudah dihapus).
+    """
+    return _get(f"/{media_id}", {"fields": "id,permalink,timestamp"})
 
 
 def publish_text(text: str, reply_to: str | None = None,
                  wait_s: int = 30) -> dict:
-    """Posting satu teks. Kembalikan {'id', 'permalink'}."""
+    """Posting satu teks. Kembalikan {'id', 'permalink',
+    'permalink_verified'} — permalink bisa None bila GET verifikasi
+    gagal (lihat _publish_container); JANGAN anggap terbit bila id
+    tidak ada (fungsi ini raise bila publish gagal)."""
     if len(text) > 500:
         raise ValueError(f"Teks {len(text)} karakter (maks 500).")
     params: dict = {"media_type": "TEXT", "text": text}
@@ -158,7 +178,7 @@ def main() -> int:
         print(f"✅ DRY RUN OK ({len(args.text)} karakter, tidak posting).")
         return 0
     res = publish_text(args.text, reply_to=args.reply_to)
-    print(f"✅ Terkirim: {res['permalink']}")
+    print(f"✅ Terkirim: {res['permalink'] or '(permalink belum terverifikasi, id=' + res['id'] + ')'}")
     return 0
 
 

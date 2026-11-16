@@ -37,6 +37,22 @@ threads<kategori><slug-produk><yyyymmdd>
   (saat ini `20261117` untuk 27 link hasil Sprint 1).
 - 1 Sub-ID = 1 produk = 1 publikasi. Link yang sudah USED tidak pernah
   dipakai lagi, jadi Sub-ID-nya tidak pernah dipakai ulang.
+
+### Keputusan tanggal Sub-ID (verifikasi Sprint 1, 17 Nov 2026)
+
+Tanggal di Sub-ID adalah **tanggal link dibuat** (identitas link yang
+stabil), BUKAN tanggal publikasi. Alasannya:
+
+- Sub-ID dibuat sekali saat link diregenerasi; produknya baru
+  dipublikasikan di tanggal berikutnya — itu normal dan bukan kesalahan.
+- Tanggal publikasi aktual tercatat di tempat yang memang untuk itu:
+  kolom `date` di `data/performance.csv`, `date` di
+  `data/post_history.json`, dan `<yyyymmdd>` di `content_id` (§3).
+- Meregenerasi ulang 27 link hanya demi menyamakan tanggal justru
+  merusak kestabilan tracking (link lama yang sudah dicatat di
+  performance/mapping jadi basi) — **tidak dilakukan**.
+- Batch link berikutnya memakai tanggal pembuatannya sendiri, supaya
+  Sub-ID tetap unik antar-batch.
 - Contoh lengkap: `threadsdapurecocobrush20261117`.
 - Batas praktis: jaga total panjang link an_redir ≤ ~185 karakter supaya
   post 2 Threads tetap di bawah 500 karakter (link terpanjang saat ini
@@ -72,6 +88,17 @@ Format:
 - Untuk publikasi video nanti: platform `threads` / `facebook` / `pinterest`
   mengikuti tempat video itu terbit; satu produk bisa punya beberapa
   content_id (satu per platform per tanggal).
+
+## 5. Batas panjang caption (Sprint 2, 17 Nov 2026)
+
+- **Absolut: 500 karakter/post** — batas platform Threads. Lebih dari
+  itu ditolak guardrail (`ERROR: panjang-post`) dan retry 5x di
+  `run_slot.py` mencoba varian lain.
+- **Operasional: 470 karakter/post (target).** Caption 471–500 karakter
+  lolos tapi dicatat sebagai peringatan (`WARN: panjang-operasional`)
+  di `tools/check_draft.py` — supaya ada margin 30 karakter untuk
+  variasi template/link dan retry jarang mentok di batas absolut.
+- Batas ini berlaku per post (post 1 hook maupun post 2 isi + link).
 
 ## 4. Riwayat migrasi (Sprint 1, 17 Nov 2026)
 
