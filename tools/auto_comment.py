@@ -48,6 +48,20 @@ video_url) + reply_to_id, alur dua tahap. Karena itu --image-url /
 TAPI kolom Image URL di DB saat ini MASIH KOSONG untuk semua produk
 (0/29 per 16 Nov 2026), jadi sampai Image URL diisi dari foto listing
 Shopee, komen jalan teks saja.
+
+Formula hook v2 (riset 16 Nov 2026, report.md riset hook reply):
+  1 detail spesifik dari postingan target + 1 sinyal bukti nyata +
+  1 pertanyaan pilihan/tebakan. 100-200 karakter, tanpa link, tanpa
+  nama produk di hook, tanpa klaim pengalaman pribadi, tanpa kata
+  terlarang. Hook pembuka sopan dipakai bervariasi — TIDAK di semua
+  komen (kadang tanpa opener, kadang "Relate banget kak").
+  Yang dihindari: pertanyaan tertutup ("apa?"), superlatif tanpa
+  bukti ("paling jujur"), template yang bisa ditempel di postingan
+  mana saja.
+  Slot template: {detail} = frasa spesifik dari postingan target,
+  {bukti} = klaim OP sendiri yang bisa dicek dari postingannya ATAU
+  angka listing terverifikasi dari VERIFIED_PROOFS (jangan karang
+  angka — {bukti} hanya boleh diisi dari dua sumber itu).
 """
 from __future__ import annotations
 
@@ -82,7 +96,7 @@ COMMENT_TEMPLATES = {
         "Ratingnya 4.8+ di Shopee, ribuan terjual — ulasan pembelinya bilang apa soal ukurannya?",
         "Yang udah beli di kolom ulasan, bahannya beneran awet nggak sih?",
         "Rame banget yang bahas ini, rating pembelinya rata-rata berapa ya?",
-        "Ulasan pembeli paling jujur soal ini apa? Penasaran sebelum milih.",
+        "Ulasan pembeli soal ini biasanya bilang apa? Penasaran sebelum milih.",
     ],
     "info_fungsi": [
         "Buat kamar kos sempit ini ngebantu banget, fungsinya buat nyimpen biar nggak numpuk.",
@@ -97,6 +111,65 @@ COMMENT_TEMPLATES = {
         "Bandingin harga antar toko dulu, kadang selisihnya lumayan buat barang yang sama.",
     ],
 }
+
+# --- Template komen v2 (formula riset 16 Nov 2026) -------------------------
+# {detail} = frasa spesifik dari postingan target (WAJIB spesifik — bukan
+# "ini" generik). {bukti} = klaim OP sendiri ATAU angka listing dari
+# VERIFIED_PROOFS (jangan karang). 8 pola, 10 template.
+COMMENT_TEMPLATES_V2 = {
+    "curiosity_gap": [
+        "Kak, {detail} — {bukti}, buat yang berat-berat berani nggak, apa cuma buat yang ringan?",
+        "{detail} muat berapa kilo sih kak? {bukti} soalnya keliatan enteng banget.",
+    ],
+    "relatable_pain": [
+        "Relate banget kak, {detail} — {bukti}, yang vertikal apa yang susun, yang mana lebih ngebantu biar nggak numpuk?",
+    ],
+    "specific_question": [
+        "Kak, {detail} — tim tempel apa tim bor nih? {bukti} buat kosan 3x3.",
+    ],
+    "hot_take": [
+        "Jujur kak, {detail} lebih awet daripada rak berdiri, asal nempelnya bener — {bukti}. Setuju nggak?",
+    ],
+    "social_proof": [
+        "Kak, {detail} — {bukti}. Yang paling sering dipuji pembeli apanya?",
+        "{detail} — {bukti}, ada yang bilang goyang kalau diisi penuh, beneran gitu ya kak?",
+    ],
+    "humor": [
+        "Kak, {detail} — {bukti}. Kosku isinya Indomie semua, ini muat berapa kilo sih? \U0001f62d",
+    ],
+    "specificity_data": [
+        "Kak, {detail} lebarnya 40 cm apa 60 cm? {bukti} buat rice cooker muat nggak?",
+    ],
+    "permission_reframe": [
+        "Kak, anak kos tuh nggak butuh dapur gede, butuh {detail} yang rapi — {bukti}. Ini sudutnya udah bener.",
+    ],
+}
+
+# Bukti listing TERVERIFIKASI (dicek langsung dari halaman produk Shopee,
+# 16 Nov 2026 — JANGAN tambah angka tanpa verifikasi halaman produk).
+# Dipakai sebagai {bukti} HANYA bila target cocok dengan jenis produknya.
+VERIFIED_PROOFS = {
+    "YESALL Rak Dapur Serbaguna": {
+        "text": "di Shopee ratingnya 4,9 dari 4.452 ulasan",
+        "source": "shopee.co.id/product/1043883019/27672762637",
+        "checked": "2026-11-16",
+    },
+    "WARS Rak Dapur Panci Wajan": {
+        "text": "di Shopee ratingnya 4,8 dari 1.581 ulasan",
+        "source": "shopee.co.id/product/21738068/25602903412",
+        "checked": "2026-11-16",
+    },
+}
+
+
+def lookup_proof(product: str) -> str | None:
+    """Cari teks {bukti} terverifikasi untuk produk di DB (nama mengandung
+    `product`). Kembalikan None kalau tidak ada data terverifikasi."""
+    needle = product.strip().lower()
+    for name, info in VERIFIED_PROOFS.items():
+        if needle in name.lower() or name.lower() in needle:
+            return info["text"]
+    return None
 
 # Hook pembuka sopan — dipilih acak per komen (aturan Kyan 16 Nov 2026).
 # Dipakai sebagai awalan: "<opener>, <isi komen>" (huruf pertama isi
@@ -123,6 +196,15 @@ BUY_CTA_PATTERNS = [
     r"\bpromo\b.*\bbeli\b",
 ]
 BUY_CTA_RES = [re.compile(p, re.I) for p in BUY_CTA_PATTERNS]
+
+# Superlatif / bahasa garansi — dilarang (riset hook v2: vague = made up).
+SUPERLATIVE_PATTERNS = [
+    r"\bpaling (jujur|murah|bagus|awet|cepat)\b",
+    r"\bdijamin\b",
+    r"\b100%\s*(ampuh|manjur|asli)\b",
+    r"\bpasti\s+(ampuh|sembuh|berhasil)\b",
+]
+SUPERLATIVE_RES = [re.compile(p, re.I) for p in SUPERLATIVE_PATTERNS]
 
 
 def pick_opener(opener: str | None = None) -> str:
@@ -153,6 +235,47 @@ def pick_template(topic: str | None = None,
     prefix = pick_opener(opener)
     body = text[0].lower() + text[1:] if text else text
     full = f"{prefix}, {body}"
+    if len(full) > MAX_CHARS:
+        return text  # kepanjangan: opener dibuang, isi saja
+    return full
+
+
+def pick_template_v2(detail: str | None = None,
+                     bukti: str | None = None,
+                     opener: str | None = None,
+                     style: str | None = None) -> str:
+    """Pilih satu template v2, isi slot {detail} + {bukti}, lalu (kadang)
+    awali hook pembuka sopan. Opener TIDAK di semua komen: bila `opener`
+    None, dipilih acak dari POLITE_OPENERS + tanpa opener. `opener="none"`
+    = tanpa opener. Total tetap maks 200 karakter — kepanjangan: opener
+    dibuang dulu, masih kepanjangan: kembalikan apa adanya (guardrail
+    akan menolak di validate_comment)."""
+    if style:
+        pool = COMMENT_TEMPLATES_V2[style]
+    else:
+        pool = [t for group in COMMENT_TEMPLATES_V2.values() for t in group]
+    text = random.choice(pool)
+    text = text.replace("{detail}", detail or "yang di foto itu")
+    text = text.replace("{bukti}", bukti or "")
+    text = re.sub(r"\s{2,}", " ", text).strip()
+    if opener == "none":
+        prefix = ""
+    elif opener:
+        if opener not in POLITE_OPENERS:
+            raise ValueError(
+                f"Opener tidak dikenal: {opener!r}. Pilih: {POLITE_OPENERS}")
+        prefix = opener
+    else:
+        prefix = random.choice(POLITE_OPENERS + [""])
+    if prefix:
+        # Opener sudah menyapa ("Izin kak") -- buang sapaan "kak" di badan
+        # template supaya tidak dobel ("Izin kak, kak, ...").
+        body = re.sub(r"^kak,?\s+", "", text, flags=re.I)
+        body = re.sub(r"\bkak,?\s+(?=[a-z])", "", body)
+        body = body[0].lower() + body[1:] if body else body
+        full = f"{prefix}, {body}"
+    else:
+        full = text
     if len(full) > MAX_CHARS:
         return text  # kepanjangan: opener dibuang, isi saja
     return full
@@ -197,6 +320,15 @@ def validate_comment(text: str) -> list[dict]:
             problems.append({
                 "level": "ERROR", "rule": "ajakan-beli",
                 "detail": f"Frasa ajakan beli '{m.group(0)}' dilarang di komen.",
+            })
+            break
+    for rx in SUPERLATIVE_RES:
+        m = rx.search(text)
+        if m:
+            problems.append({
+                "level": "ERROR", "rule": "superlatif-tanpa-bukti",
+                "detail": f"Frasa '{m.group(0)}' dilarang — superlatif/garansi "
+                          "tanpa bukti (aturan hook v2).",
             })
             break
     # Guardrail yang sama dengan posting: kata terlarang, klaim review, garansi.
@@ -252,7 +384,11 @@ def parse_targets_file(path: Path) -> list[dict]:
         if post_id.startswith("http"):
             post_id = post_id.rstrip("/").split("/")[-1]
         topic = parts[1].strip() if len(parts) > 1 else None
-        targets.append({"post_id": post_id, "topic": topic})
+        # Kolom 3 = detail spesifik postingan, kolom 4 = bukti (v2).
+        detail = parts[2].strip() if len(parts) > 2 else None
+        bukti = parts[3].strip() if len(parts) > 3 else None
+        targets.append({"post_id": post_id, "topic": topic,
+                        "detail": detail, "bukti": bukti})
     return targets
 
 
@@ -339,13 +475,22 @@ def main() -> int:
                     help="Hanya cetak draf + hasil guardrail (default aman)")
     ap.add_argument("--live", action="store_true",
                     help="KIRIM komen beneran (wajib eksplisit)")
-    ap.add_argument("--opener", choices=POLITE_OPENERS, default=None,
-                    help="Hook pembuka sopan (default: acak per komen)")
-    ap.add_argument("--style", choices=list(COMMENT_TEMPLATES),
+    ap.add_argument("--opener", choices=POLITE_OPENERS + ["none"], default=None,
+                    help="Hook pembuka sopan (default: acak per komen, "
+                         "kadang tanpa opener; 'none' = tanpa opener)")
+    ap.add_argument("--style",
+                    choices=list(COMMENT_TEMPLATES) + list(COMMENT_TEMPLATES_V2),
                     default=None,
                     help="Gaya template saja (default: acak semua gaya)")
     ap.add_argument("--seed", type=int, default=None,
                     help="Seed random (regenerasi draf yang sama)")
+    ap.add_argument("--detail", default=None,
+                    help="Detail spesifik postingan target (slot {detail} v2)")
+    ap.add_argument("--proof", default=None,
+                    help="Sinyal bukti nyata (slot {bukti} v2) — klaim OP "
+                         "atau angka listing terverifikasi, jangan karang")
+    ap.add_argument("--v1", action="store_true",
+                    help="Pakai template lama (v1), bukan formula hook v2")
     ap.add_argument("--image-url", default=None,
                     help="URL publik foto produk untuk dilampirkan di komen")
     ap.add_argument("--video-url", default=None,
@@ -370,6 +515,11 @@ def main() -> int:
         else:
             print(f"⚠️  Produk '{args.product}' belum punya Image URL di DB "
                   "— komen jalan teks saja.")
+    if args.product and not args.proof:
+        proof = lookup_proof(args.product)
+        if proof:
+            args.proof = proof
+            print(f"📊 Bukti terverifikasi '{args.product}': {proof}")
     for label, url in (("image", image_url), ("video", video_url)):
         if url and not url.startswith("https://"):
             ap.error(f"--{label}-url harus URL publik https://, "
@@ -422,8 +572,15 @@ def main() -> int:
         if live and sent_today(history) + sent >= MAX_PER_DAY:
             print(f"⏹️  Limit {MAX_PER_DAY} komen/hari tercapai — berhenti.")
             break
-        text = pick_template(t.get("topic"),
-                               opener=args.opener, style=args.style)
+        detail = t.get("detail") or args.detail
+        bukti = t.get("bukti") or args.proof
+        if args.v1 or (args.style and args.style in COMMENT_TEMPLATES):
+            text = pick_template(t.get("topic"),
+                                 opener=None if args.opener == "none" else args.opener,
+                                 style=args.style)
+        else:
+            text = pick_template_v2(detail, bukti,
+                                    opener=args.opener, style=args.style)
         problems = validate_comment(text)
         if problems:
             print(f"❌ {pid}: draf ditolak guardrail:")

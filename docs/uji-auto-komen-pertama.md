@@ -36,16 +36,27 @@ dimasukkan ke file target.
   kategori organizer di DB (rak gantung). Penulis sudah menerima link Shopee
   di reply-nya sendiri — audiensnya sedang dalam mode cari produk.
 
-### Draf komen 1 (v2 — hook pembuka sopan)
+### Draf komen 1 (v3 — formula hook v2)
 
-> Izin kak, ulasan pembeli paling jujur soal rak gantung serbaguna apa? Penasaran sebelum milih.
+> Izin kak, raknya nempel tanpa bor — katanya perekat kuat anti karat, buat yang berat-berat berani nggak, apa cuma buat yang ringan?
 
-- Panjang: 94 karakter (maks 200)
-- Hook pembuka: `Izin kak` · gaya template: `tanya_rating`
-- Regenerasi: `python3 tools/auto_comment.py --targets /tmp/targets-uji1.txt --dry-run --seed 0 --opener "Izin kak" --style tanya_rating` → exit 0
+- Panjang: 131 karakter (range v2: 100–200)
+- Formula: detail OP ("raknya nempel tanpa bor") + bukti ("katanya perekat
+  kuat anti karat" — klaim OP sendiri dari postingannya) + pertanyaan
+  pilihan ("buat yang berat-berat berani nggak, apa cuma buat yang ringan?")
+- Hook pembuka: `Izin kak` · gaya template v2: `curiosity_gap`
+- Regenerasi: `python3 tools/auto_comment.py --targets /tmp/targets-uji1.txt --dry-run --seed 1 --opener "Izin kak" --style curiosity_gap` → exit 0
 - **Hasil guardrail: ✅ LOLOS** (`--targets --dry-run` + `--text` check,
   exit 0 — tanpa kata terlarang, tanpa link, tanpa ajakan beli, tanpa
-  klaim pribadi)
+  klaim pribadi, tanpa superlatif)
+
+**Kenapa lebih baik dari v2:** v2 ("ulasan pembeli paling jujur soal rak
+gantung serbaguna apa?", 94 karakter) tidak punya detail spesifik
+postingan (bisa ditempel di postingan rak mana saja), tidak ada
+curiosity gap, dan "paling jujur" adalah superlatif tanpa bukti.
+V3 menyebut detail foto (tanpa bor), menguji klaim OP sendiri
+(perekat kuat anti karat), dan menutup dengan pertanyaan pilihan yang
+gampang dijawab OP.
 
 ## Target 2
 
@@ -61,16 +72,67 @@ dimasukkan ke file target.
   Pertanyaan di akhir postingan mengundang balasan — komen yang relevan
   tidak terlihat seperti spam.
 
-### Draf komen 2 (v2 — hook pembuka sopan)
+### Draf komen 2 (v3 — formula hook v2)
 
-> Permisi kak, buat kamar kos sempit rak dinding kamar kos ngebantu banget, fungsinya buat nyimpen biar nggak numpuk.
+> Relate banget kak, kamar kos sempit pasang rak dinding — langsung rapi, yang vertikal apa yang susun, yang mana lebih ngebantu biar nggak numpuk?
 
-- Panjang: 115 karakter (maks 200)
-- Hook pembuka: `Permisi kak` · gaya template: `info_fungsi`
-- Regenerasi: `python3 tools/auto_comment.py --targets /tmp/targets-uji2.txt --dry-run --seed 2 --opener "Permisi kak" --style info_fungsi` → exit 0
+- Panjang: 145 karakter (range v2: 100–200)
+- Formula: detail OP ("kamar kos sempit pasang rak dinding") + bukti
+  ("langsung rapi" — hasil yang OP ceritakan sendiri) + pertanyaan
+  pilihan ("yang vertikal apa yang susun")
+- Hook pembuka: TIDAK ADA opener "Izin kak" di komen ini — variasikan
+  (aturan v2: opener tidak di semua komen) · gaya template v2:
+  `relatable_pain`
+- Regenerasi: `python3 tools/auto_comment.py --targets /tmp/targets-uji2.txt --dry-run --seed 1 --opener none --style relatable_pain` → exit 0
 - **Hasil guardrail: ✅ LOLOS** (`--targets --dry-run` + `--text` check,
   exit 0 — tanpa kata terlarang, tanpa link, tanpa ajakan beli, tanpa
-  klaim pribadi)
+  klaim pribadi, tanpa superlatif)
+
+**Kenapa lebih baik dari v2:** v2 ("buat kamar kos sempit rak dinding
+kamar kos ngebantu banget, fungsinya buat nyimpen biar nggak numpuk",
+115 karakter) adalah pernyataan umum tanpa pertanyaan — OP tidak punya
+alasan membalas. V3 membuka dengan relatabilitas ("Relate banget kak"),
+menyebut hasil OP sendiri, dan menutup dengan pilihan A/B yang
+gampang dijawab.
+
+## Formula hook v2 (riset 16 Nov 2026)
+
+Sumber: `~/workspace/research_notes/threads-reply-hooks-research-20261116-1253/report.md`
+(GitHub: d4ncboz, msyamsularif, rediumvex, Sekolah76/syadagentic,
+akbarseft86, sergebulaev, Affitor).
+
+**Formula:** 1 detail spesifik dari postingan target + 1 sinyal bukti
+nyata + 1 pertanyaan pilihan/tebakan. 100–200 karakter, tanpa link,
+tanpa nama produk di hook, tanpa klaim pengalaman pribadi.
+`tools/auto_comment.py` kini punya 10 template v2 dalam 8 pola
+(curiosity_gap, relatable_pain, specific_question, hot_take,
+social_proof, humor, specificity_data, permission_reframe) dengan slot
+`{detail}` dan `{bukti}`. File target diperluas: kolom TAB ke-3 =
+detail, ke-4 = bukti. Flag baru: `--detail`, `--proof`, `--opener none`,
+`--v1` (kembali ke template lama).
+
+**Bukti terverifikasi (angka listing Shopee, dicek langsung 16 Nov 2026):**
+
+| Produk DB | Bukti | Sumber |
+|---|---|---|
+| YESALL Rak Dapur Serbaguna | rating 4,9 dari 4.452 ulasan | shopee.co.id/product/1043883019/27672762637 |
+| WARS Rak Dapur Panci Wajan | rating 4,8 dari 1.581 ulasan | shopee.co.id/product/21738068/25602903412 |
+
+Tersimpan di `VERIFIED_PROOFS` di `tools/auto_comment.py` (diambil via
+`--product`). **Catatan jujur:** kedua produk itu BUKAN rak tempel
+dinding — jadi angkanya TIDAK dipakai di 2 draf uji ini (memakainya
+berarti mengarang atribusi). Untuk kedua target ini `{bukti}` diisi
+klaim OP sendiri yang bisa dicek dari postingannya (perekat kuat anti
+karat / kamar langsung rapi). Angka listing hanya dipakai bila target
+cocok dengan jenis produknya.
+
+**Bug yang ketemu & diperbaiki saat uji v3:** `pick_template_v2()`
+menempel opener di depan template yang diawali "Kak," sehingga
+hasilnya "Izin kak, kak, ..." (sapaan dobel). Diperbaiki: sapaan "kak"
+di badan template dibuang otomatis bila opener dipakai. Template v1
+"Ulasan pembeli paling jujur..." juga diperbaiki (melanggar aturan
+superlatif v2 yang baru) — guardrail baru menolak superlatif/garansi
+("paling jujur/murah", "dijamin", "pasti ampuh").
 
 ## Foto/video di komen — hasil cek API (16 Nov 2026 19:46)
 
@@ -102,10 +164,13 @@ dicoba untuk app ini) — uji live pertama wajib dry-run dulu + approval Kyan.
 ## Cara kirim (setelah approval Kyan)
 
 ```bash
-# 1. Tulis target ke file (post ID + topik, dipisah TAB)
-printf "DfctjUKkmhz\trak gantung serbaguna\nDfl11LgEXJY\trak dinding kamar kos\n" > /tmp/targets-uji.txt
+# 1. Tulis target ke file (post ID + topik + detail + bukti, dipisah TAB)
+printf "DfctjUKkmhz\trak gantung serbaguna\traknya nempel tanpa bor\tkatanya perekat kuat anti karat\nDfl11LgEXJY\trak dinding kamar kos\tkamar kos sempit pasang rak dinding\tlangsung rapi\n" > /tmp/targets-uji.txt
 
-# 2. Kirim HANYA 2 komen ini (limit harian tool: 10, jeda 10-30 menit otomatis)
+# 2. Dry-run dulu, cek draf v3-nya
+python3 tools/auto_comment.py --targets /tmp/targets-uji.txt --dry-run --seed 1
+
+# 3. Kirim HANYA 2 komen ini (limit harian tool: 10, jeda 10-30 menit otomatis)
 python3 tools/auto_comment.py --targets /tmp/targets-uji.txt --live
 
 # 3. Pantau 24 jam: apakah ada balasan / kunjungan profil / kena limit?
@@ -127,8 +192,9 @@ python3 tools/auto_comment.py --targets /tmp/targets-uji.txt --live
   jadi regex kata utuh (`\bini\b`), dry-run ulang lolos dengan teks benar.
 - **Belum terverifikasi:** pengiriman live (belum pernah dicoba), dan apakah
   Threads membatasi reply dari akun ini setelah beberapa komen.
-- **Aturan yang ditegakkan tool:** tanpa link di komen orang lain, tanpa kata
-  komisi/affiliate, tanpa klaim pengalaman pribadi, hook pembuka sopan acak
-  (`Izin kak` dll) di tiap komen, maks 10 komen/hari,
-  jeda acak 10–30 menit, tidak komen 2x di postingan yang sama, tidak komen
-  di postingan sendiri.
+- **Aturan yang ditegakkan tool (v3):** tanpa link di komen orang lain, tanpa kata
+  komisi/affiliate, tanpa klaim pengalaman pribadi, tanpa superlatif/garansi
+  ("paling jujur", "dijamin"), hook pembuka sopan bervariasi (tidak di semua
+  komen), formula v2 (detail + bukti + pertanyaan pilihan), 100–200 karakter,
+  maks 10 komen/hari, jeda acak 10–30 menit, tidak komen 2x di postingan yang
+  sama, tidak komen di postingan sendiri.
