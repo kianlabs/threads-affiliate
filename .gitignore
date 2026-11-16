@@ -54,3 +54,5 @@ tmp/
 data/*.bak*
 
 data/comment_history.json
+
+data/video_publish_log.json

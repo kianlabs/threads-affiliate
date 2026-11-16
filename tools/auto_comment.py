@@ -102,7 +102,9 @@ def pick_template(topic: str | None = None) -> str:
     pool = [t for group in COMMENT_TEMPLATES.values() for t in group]
     text = random.choice(pool)
     if topic:
-        text = text.replace("ini", topic, 1) if "ini" in text else text
+        # Ganti hanya kata "ini" yang berdiri sendiri — jangan merusak
+        # kata yang mengandung "ini" (mis. "gini" -> "g<topik>").
+        text = re.sub(r"\bini\b", topic, text, count=1)
     return text
 
 
