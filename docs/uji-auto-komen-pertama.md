@@ -207,28 +207,28 @@ python3 tools/auto_comment.py --targets /tmp/targets-uji.txt --live
 
 ### Komen 1 — @ginakuhana / DfctjUKkmhz — GAGAL 20:08:47 WIB
 
-- Perintah: 
+- Perintah: python3 tools/auto_comment.py --targets /tmp/targets-uji1.txt --live --seed 1 --opener "Izin kak" --style curiosity_gap
 - Dry-run sebelumnya: teks regenerasi PERSIS sama dengan yang disetujui (131 karakter, LOLOS).
-- Error 1 (cek pemilik, warning — tool lanjut kirim): 
-- Error 2 (kirim, fatal): 
-- Output tool: 
-- Tercatat di  (tidak di-commit): 1 entri, status , alasan = error 2 di atas.
+- Error 1 (cek pemilik, warning — tool lanjut kirim): Threads API 400 GET /DfctjUKkmhz: "Unsupported get request. Object with ID 'DfctjUKkmhz' does not exist, cannot be loaded due to missing permissions, or does not support this operation" (code 100, subcode 33)
+- Error 2 (kirim, fatal): Threads API 500 POST /me/threads: "Param reply_to_id is not a valid threads_media ID" (code 100)
+- Output tool: [LIVE] Terkirim: 0, dilewati/ditolak: 1.
+- Tercatat di data/comment_history.json (tidak di-commit): 1 entri, status failed, alasan = error 2 di atas.
 
 ### Komen 2 — @inspirasi.rumah26 / Dfl11LgEXJY — TIDAK DIKIRIM
 
 - Tidak dicoba. Aturan tugas: kalau API error, BERHENTI — tidak coba jalur
   lain. Kemungkinan besar gagal dengan error yang sama (masalahnya di
-  , bukan di target spesifik).
+  reply_to_id, bukan di target spesifik).
 
 ### Dugaan penyebab (BELUM terverifikasi — perlu pengecekan, bukan klaim)
 
--  mungkin butuh ID media numerik Threads, bukan kode pendek
-  publik ( adalah kode URL, bukan ID media API). Tool saat ini
-  memakai kode pendek langsung sebagai .
+- reply_to_id mungkin butuh ID media numerik Threads, bukan kode pendek
+  publik (DfctjUKkmhz adalah kode URL, bukan ID media API). Tool saat ini
+  memakai kode pendek langsung sebagai reply_to_id.
 - Error 400 saat GET postingan juga menandakan app (belum diterbitkan,
   tanpa App Review) mungkin tidak bisa membaca postingan orang lain —
-  sejalan dengan  yang 403 sebelumnya.
+  sejalan dengan /keyword_search yang 403 sebelumnya.
 - Yang perlu dicek berikutnya (oleh developer, bukan dengan kirim ulang
   buta): bagaimana cara dapat ID media numerik sebuah postingan Threads
   (misal via oEmbed / tampilan web / endpoint lain), dan apakah scope
-   saja cukup untuk reply ke postingan orang lain.
+  threads_manage_replies saja cukup untuk reply ke postingan orang lain.
