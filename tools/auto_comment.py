@@ -86,6 +86,43 @@ DELAY_MAX_S = 30 * 60
 ROOT = Path(__file__).resolve().parent.parent
 HISTORY_PATH = ROOT / "data" / "comment_history.json"
 
+# --- Shortcode -> ID media numerik ----------------------------------------
+# Threads/Instagram memakai shortcode base64 (alfabet A-Za-z0-9-_) sebagai
+# representasi ID media numerik. API resmi MENOLAK shortcode sebagai
+# reply_to_id (500 "not a valid threads_media ID", 16 Nov 2026 20:08 WIB)
+# -- jadi shortcode WAJIB di-decode dulu secara offline sebelum dipakai.
+# Terverifikasi: DfctjUKkmhz -> 4025292505889269875,
+# Dfl11LgEXJY -> 4027862192699306584.
+# PERINGATAN (16 Nov 2026 20:31 WIB): ID hasil decode ini DITOLAK Threads API
+# (500 "not a valid threads_media ID"). Bukti: postingan sendiri Kikkoman
+# shortcode DfzOch6n5SE decode-nya 4031629624640246916, tapi media_id API-nya
+# 18135902441497212. Shortcode Threads BUKAN base64 dari ID media API-nya.
+# Jangan retry kirim dengan ID decode ini -- pasti gagal. Fungsi ini hanya
+# benar sebagai decode gaya Instagram, bukan sebagai resolver ID Threads.
+
+SHORTCODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+
+def decode_shortcode(shortcode: str) -> str:
+    """Decode shortcode Threads/Instagram jadi ID media numerik (str)."""
+    value = 0
+    for ch in shortcode:
+        if ch not in SHORTCODE_ALPHABET:
+            raise ValueError(f"Karakter shortcode tidak valid: {ch!r}")
+        value = value * 64 + SHORTCODE_ALPHABET.index(ch)
+    return str(value)
+
+
+def resolve_media_id(post_id: str) -> str:
+    """Normalisasi ID target: URL -> segmen terakhir; shortcode -> ID numerik.
+    ID yang sudah numerik dikembalikan apa adanya."""
+    pid = post_id.strip()
+    if pid.startswith("http"):
+        pid = pid.rstrip("/").split("/")[-1]
+    if pid.isdigit():
+        return pid
+    return decode_shortcode(pid)
+
 # --- Template komen -------------------------------------------------------
 # Gaya mengikuti hook v5.1: fokus review / rating / ulasan pembeli, tanya,
 # info fungsi, tips. TANPA nama produk, TANPA klaim pribadi, TANPA link,
@@ -379,10 +416,9 @@ def parse_targets_file(path: Path) -> list[dict]:
         if not line or line.startswith("#"):
             continue
         parts = line.split("\t")
-        post_id = parts[0].strip()
-        # Terima URL threads.com juga — ambil segmen terakhir sebagai ID.
-        if post_id.startswith("http"):
-            post_id = post_id.rstrip("/").split("/")[-1]
+        # Terima URL threads.com juga; shortcode di-decode jadi ID numerik
+        # (API resmi menolak shortcode sebagai reply_to_id).
+        post_id = resolve_media_id(parts[0])
         topic = parts[1].strip() if len(parts) > 1 else None
         # Kolom 3 = detail spesifik postingan, kolom 4 = bukti (v2).
         detail = parts[2].strip() if len(parts) > 2 else None
@@ -449,6 +485,7 @@ def send_comment_threads(post_id: str, text: str,
     Sebelum kirim, cek pemilik postingan — jangan komen di post sendiri.
     """
     import publish_api
+    post_id = resolve_media_id(post_id)
     try:
         owner = publish_api._get(f"/{post_id}", {"fields": "username"})
         if owner.get("username") == USERNAME:

@@ -232,3 +232,48 @@ python3 tools/auto_comment.py --targets /tmp/targets-uji.txt --live
   buta): bagaimana cara dapat ID media numerik sebuah postingan Threads
   (misal via oEmbed / tampilan web / endpoint lain), dan apakah scope
   threads_manage_replies saja cukup untuk reply ke postingan orang lain.
+
+## Retry LIVE dengan ID numerik — GAGAL LAGI (16 Nov 2026 20:31 WIB)
+
+> **STATUS: GAGAL — 0 komen terkirim. Retry memakai ID numerik hasil decode
+> shortcode. Komen 2 TIDAK DIKIRIM (aturan tugas: kalau komen 1 gagal,
+> BERHENTI — tanpa Playwright/cookie/repo privat).**
+
+### Perbaikan tool sebelum retry
+
+- `tools/auto_comment.py` sekarang punya `decode_shortcode()` +
+  `resolve_media_id()` (alfabet Instagram base64 `A-Za-z0-9-_`).
+  Unit check lolos: `DfctjUKkmhz` -> `4025292505889269875`,
+  `Dfl11LgEXJY` -> `4027862192699306584` (round-trip encode kembali ke
+  shortcode yang sama — implementasi decode-nya benar).
+- Dry-run sebelum live: target ter-resolve ke `4025292505889269875`, teks
+  regenerasi PERSIS sama dengan yang disetujui Kyan (131 karakter, LOLOS).
+
+### Komen 1 — @ginakuhana / 4025292505889269875 — GAGAL 20:31:05 WIB
+
+- Perintah: python3 tools/auto_comment.py --targets /tmp/targets-uji1.txt --live --seed 1 --opener "Izin kak" --style curiosity_gap
+- Error 1 (cek pemilik, warning — tool lanjut kirim): Threads API 400 GET /4025292505889269875: "Unsupported get request. Object with ID '4025292505889269875' does not exist, cannot be loaded due to missing permissions, or does not support this operation" (code 100, subcode 33)
+- Error 2 (kirim, fatal): Threads API 500 POST /me/threads: "Param reply_to_id is not a valid threads_media ID" (code 100)
+- Output tool: [LIVE] Terkirim: 0, dilewati/ditolak: 1.
+- Tercatat di data/comment_history.json (tidak di-commit): entri ke-2, status failed, post_id numerik, alasan = error 2 di atas.
+
+### Komen 2 — @inspirasi.rumah26 / 4027862192699306584 — TIDAK DIKIRIM
+
+- Tidak dicoba, sesuai aturan berhenti saat komen 1 gagal.
+
+### Bukti penentu: decode shortcode BUKAN ID media Threads API
+
+- Postingan kita sendiri (Kikkoman repost) tercatat di
+  `data/post_history.json`: permalink shortcode `DfzOch6n5SE` tapi
+  `media_id` API = `18135902441497212`. Decode Instagram-base64 dari
+  `DfzOch6n5SE` = `4031629624640246916` — TIDAK SAMA.
+- Kesimpulan: shortcode Threads TIDAK bisa di-decode jadi ID media API
+  Threads dengan alfabet Instagram. ID media Threads API punya namespace
+  sendiri (contoh: 17 digit diawali 18...). Jadi retry dengan ID hasil
+  decode pasti gagal — dan memang gagal dengan error yang sama persis.
+- Yang masih perlu dijawab (bukan dengan kirim ulang buta): dari mana
+  mendapatkan ID media numerik Threads API untuk postingan orang lain.
+  API resmi TIDAK punya endpoint URL -> media ID, dan membaca postingan
+  orang lain butuh Advanced Access / App Review (GET 400 subcode 33
+  konsisten dengan itu). Sampai ada sumber ID yang valid, auto-komen ke
+  postingan orang lain via API resmi TIDAK BISA jalan.
