@@ -36,14 +36,16 @@ dimasukkan ke file target.
   kategori organizer di DB (rak gantung). Penulis sudah menerima link Shopee
   di reply-nya sendiri — audiensnya sedang dalam mode cari produk.
 
-### Draf komen 1
+### Draf komen 1 (v2 — hook pembuka sopan)
 
-> Ulasan pembeli paling jujur soal rak gantung serbaguna apa? Penasaran sebelum milih.
+> Izin kak, ulasan pembeli paling jujur soal rak gantung serbaguna apa? Penasaran sebelum milih.
 
-- Panjang: 84 karakter (maks 200)
-- Gaya template: `tanya_rating`
-- **Hasil guardrail: ✅ LOLOS** (`--text` check, exit 0 — tanpa kata
-  terlarang, tanpa link, tanpa ajakan beli, tanpa klaim pribadi)
+- Panjang: 94 karakter (maks 200)
+- Hook pembuka: `Izin kak` · gaya template: `tanya_rating`
+- Regenerasi: `python3 tools/auto_comment.py --targets /tmp/targets-uji1.txt --dry-run --seed 0 --opener "Izin kak" --style tanya_rating` → exit 0
+- **Hasil guardrail: ✅ LOLOS** (`--targets --dry-run` + `--text` check,
+  exit 0 — tanpa kata terlarang, tanpa link, tanpa ajakan beli, tanpa
+  klaim pribadi)
 
 ## Target 2
 
@@ -59,14 +61,43 @@ dimasukkan ke file target.
   Pertanyaan di akhir postingan mengundang balasan — komen yang relevan
   tidak terlihat seperti spam.
 
-### Draf komen 2
+### Draf komen 2 (v2 — hook pembuka sopan)
 
-> Buat kamar kos sempit rak dinding kamar kos ngebantu banget, fungsinya buat nyimpen biar nggak numpuk.
+> Permisi kak, buat kamar kos sempit rak dinding kamar kos ngebantu banget, fungsinya buat nyimpen biar nggak numpuk.
 
-- Panjang: 102 karakter (maks 200)
-- Gaya template: `info_fungsi`
-- **Hasil guardrail: ✅ LOLOS** (`--text` check, exit 0 — tanpa kata
-  terlarang, tanpa link, tanpa ajakan beli, tanpa klaim pribadi)
+- Panjang: 115 karakter (maks 200)
+- Hook pembuka: `Permisi kak` · gaya template: `info_fungsi`
+- Regenerasi: `python3 tools/auto_comment.py --targets /tmp/targets-uji2.txt --dry-run --seed 2 --opener "Permisi kak" --style info_fungsi` → exit 0
+- **Hasil guardrail: ✅ LOLOS** (`--targets --dry-run` + `--text` check,
+  exit 0 — tanpa kata terlarang, tanpa link, tanpa ajakan beli, tanpa
+  klaim pribadi)
+
+## Foto/video di komen — hasil cek API (16 Nov 2026 19:46)
+
+**BISA secara API.** Threads API mendukung reply bermedia: container
+`media_type=IMAGE` + `image_url` (atau `VIDEO` + `video_url`) +
+`reply_to_id`, alur dua tahap (buat container → poll FINISHED → publish).
+Implementasi: `publish_api.publish_media_reply()` + flag opsional
+`--image-url` / `--video-url` / `--product` di `tools/auto_comment.py`
+(keduanya saling eksklusif; URL harus publik `https://`).
+
+**TAPI saat ini belum bisa dipakai — Image URL di DB masih kosong.**
+Kolom Image URL (ke-7) di `data/affiliate_links.md` terisi **0 dari 29
+produk** (itu juga sebabnya dry-run Pinterest abort). Sampai Image URL
+diisi dari foto listing Shopee, komen jalan **teks saja** — tool memberi
+peringatan jelas (`Produk '...' belum punya Image URL di DB — komen
+jalan teks saja`) dan tetap lanjut. `--product` tanpa Image URL terverifikasi
+di dry-run: warning muncul, draf tetap LOLOS.
+
+**Keputusan:** foto/video produk tetap tampil di postingan akun sendiri
+(Threads post + FB Reel + Pinterest Pin). Komen ke postingan orang lain
+tetap teks saja untuk sekarang — komen berfoto di postingan orang lebih
+gampang dikira iklan/spam, dan tanpa Image URL di DB pun tidak ada yang
+bisa dilampirkan. Setelah Image URL terisi, media di komen dipakai hemat:
+hanya bila foto produk relevan langsung dengan isi postingan target.
+
+**Belum terverifikasi:** pengiriman reply bermedia live (belum pernah
+dicoba untuk app ini) — uji live pertama wajib dry-run dulu + approval Kyan.
 
 ## Cara kirim (setelah approval Kyan)
 
@@ -97,6 +128,7 @@ python3 tools/auto_comment.py --targets /tmp/targets-uji.txt --live
 - **Belum terverifikasi:** pengiriman live (belum pernah dicoba), dan apakah
   Threads membatasi reply dari akun ini setelah beberapa komen.
 - **Aturan yang ditegakkan tool:** tanpa link di komen orang lain, tanpa kata
-  komisi/affiliate, tanpa klaim pengalaman pribadi, maks 10 komen/hari,
+  komisi/affiliate, tanpa klaim pengalaman pribadi, hook pembuka sopan acak
+  (`Izin kak` dll) di tiap komen, maks 10 komen/hari,
   jeda acak 10–30 menit, tidak komen 2x di postingan yang sama, tidak komen
   di postingan sendiri.

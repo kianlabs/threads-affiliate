@@ -11,6 +11,8 @@ Alur Threads API (v1.0):
   4. GET /{post_id}?fields=permalink -> URL publik (verifikasi)
 
 Balasan (self-reply berisi link): container dengan reply_to_id=<id post 1>.
+Reply bermedia: publish_media_reply(text, reply_to, image_url=... /
+video_url=...) — container IMAGE/VIDEO + reply_to_id (cek API 16 Nov 2026).
 
 Penggunaan:
   python tools/publish_api.py --text "..." [--reply-to <id>]
@@ -74,16 +76,8 @@ def _get(path: str, params: dict) -> dict:
             f"Threads API {e.code} GET {path}: {detail[:300]}") from e
 
 
-def publish_text(text: str, reply_to: str | None = None,
-                 wait_s: int = 30) -> dict:
-    """Posting satu teks. Kembalikan {'id', 'permalink'}."""
-    if len(text) > 500:
-        raise ValueError(f"Teks {len(text)} karakter (maks 500).")
-    params: dict = {"media_type": "TEXT", "text": text}
-    if reply_to:
-        params["reply_to_id"] = reply_to
-    container = _post("/me/threads", params)
-    cid = container["id"]
+def _publish_container(cid: str, wait_s: int) -> dict:
+    """Poll container sampai FINISHED lalu publish. Kembalikan id+permalink."""
     deadline = time.time() + wait_s
     while True:
         st = _get(f"/{cid}", {"fields": "status"})
@@ -107,6 +101,48 @@ def publish_text(text: str, reply_to: str | None = None,
         "permalink": permalink
         or f"https://www.threads.com/@{USERNAME}/post/{pid}",
     }
+
+
+def publish_text(text: str, reply_to: str | None = None,
+                 wait_s: int = 30) -> dict:
+    """Posting satu teks. Kembalikan {'id', 'permalink'}."""
+    if len(text) > 500:
+        raise ValueError(f"Teks {len(text)} karakter (maks 500).")
+    params: dict = {"media_type": "TEXT", "text": text}
+    if reply_to:
+        params["reply_to_id"] = reply_to
+    container = _post("/me/threads", params)
+    return _publish_container(container["id"], wait_s)
+
+
+def publish_media_reply(text: str, reply_to: str,
+                        image_url: str | None = None,
+                        video_url: str | None = None,
+                        wait_s: int = 60) -> dict:
+    """Reply bermedia via Threads API: container media_type=IMAGE
+    (+image_url) atau VIDEO (+video_url) + reply_to_id, lalu poll FINISHED
+    dan publish. Media HARUS di URL publik https:// (Meta mengambil
+    langsung saat container dibuat). image_url dan video_url saling
+    eksklusif — isi tepat satu.
+
+    Dasar: model container Threads API menerima reply_to_id bersama
+    media_type IMAGE/VIDEO (bukan hanya TEXT). BELUM pernah diuji live
+    untuk app 'TemuanHarian Threads API' — uji live pertama wajib
+    --dry-run dulu + approval Kyan.
+    """
+    if bool(image_url) == bool(video_url):
+        raise ValueError("Isi tepat satu: image_url ATAU video_url.")
+    if len(text) > 500:
+        raise ValueError(f"Teks {len(text)} karakter (maks 500).")
+    if image_url:
+        params: dict = {"media_type": "IMAGE", "image_url": image_url,
+                        "text": text}
+    else:
+        params = {"media_type": "VIDEO", "video_url": video_url,
+                  "text": text}
+    params["reply_to_id"] = reply_to
+    container = _post("/me/threads", params)
+    return _publish_container(container["id"], wait_s)
 
 
 def main() -> int:
