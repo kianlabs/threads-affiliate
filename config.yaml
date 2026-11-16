@@ -1,11 +1,11 @@
 # ============================================================
 # Konfigurasi v1 — Sistem Affiliate Shopee → Threads + Facebook
-# Akun: @temuanhariann.id | Niche awal: home living / kos-kosan
+# Akun: @shopee_harian | Niche awal: home living / kos-kosan
 # (diputuskan lewat riset 16 Nov 2026; beauty = expansion #2)
 # ============================================================
 
 akun:
-  threads_username: "@temuanhariann.id"
+  threads_username: "@shopee_harian"
   shopee_affiliate: "pratama"          # nama akun di dashboard affiliate.shopee.co.id
 
 # Jadwal posting (WIB, Asia/Jakarta). Server/PC harus di zona waktu ini.

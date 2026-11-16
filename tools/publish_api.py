@@ -30,7 +30,7 @@ from pathlib import Path
 
 BASE = "https://graph.threads.net/v1.0"
 TOKEN_PATH = Path("~/.threads_poster/threads_token.env").expanduser()
-USERNAME = "temuanhariann.id"
+USERNAME = "shopee_harian"
 
 
 def load_token(path: Path = TOKEN_PATH) -> str:
