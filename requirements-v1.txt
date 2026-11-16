@@ -1,0 +1,10 @@
+# v1 = kebutuhan upstream + PyYAML (untuk config.yaml)
+# Pasang di PC (bukan VM ini):
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements-v1.txt
+#   .venv/bin/playwright install chromium
+playwright>=1.40.0
+browser-cookie3>=0.19.0
+Pillow>=10.0.0
+click>=8.1.0
+python-dotenv>=1.0.0
+PyYAML>=6.0

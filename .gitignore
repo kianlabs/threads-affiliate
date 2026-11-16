@@ -1,4 +1,4 @@
-# Project artifacts
+# Python
 *.pyc
 __pycache__/
 *.egg-info/
@@ -13,13 +13,16 @@ venv/
 .venv/
 env/
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
 *.swp
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Sensitive — NEVER commit
+# === SENSITIF — JANGAN PERNAH DI-COMMIT ===
+# Cookie sesi = kunci login penuh akun Threads/IG. Bocor = akun diambil alih.
 *.cookies.json
 *cookies.json
 .threads_poster/
@@ -27,18 +30,20 @@ cookies/
 sessions/
 *.session
 *token*.json
+.env
+.env.*
 
-# User data
+# === DATA PRIBADI — JANGAN DI-COMMIT ===
+# Berisi link affiliate + riwayat posting akun.
 data/affiliate_links.md
 data/post_history.json
 data/*.db
 data/output/
+data/product_images/
+
+# Logs (berisi URL post + potongan konten)
 logs/
 tmp/
-
-# OS
-Thumbs.db
-desktop.ini
 
 # Test artifacts
 /tmp/debug_*.png

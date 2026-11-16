@@ -1,283 +1,126 @@
-# Threads Affiliate Poster ID
+# Sistem Affiliate Shopee → Threads (v1)
 
-> Automated Indonesian-language affiliate posting to Threads (Meta) with anti-spam rotation, dedup logic, and clean affiliate link insertion.
+**Akun:** @temuanhariann.id · **Niche awal:** beauty (skincare / parfum / haircare / makeup)
+**Status:** scaffold v1 — SIAP diinstal di PC, BELUM posting apa pun.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Playwright](https://img.shields.io/badge/Playwright-Python-green.svg)](https://playwright.dev/python/)
-[![AI Agent Ready](https://img.shields.io/badge/AI%20Agent-Ready-blueviolet)](./AGENTS.md)
-[![llms.txt](https://img.shields.io/badge/llms.txt-✓-orange)](./llms.txt)
+Sistem full-auto gratis: link Shopee dari database manual → draf dicek
+guardrails → posting otomatis 3x/hari (08:00 / 13:00 / 20:00 WIB) via
+Playwright. Tanpa API resmi (keduanya belum tersedia — lihat bawah).
 
-Production-ready toolkit for affiliate marketers running Shopee/Lazada/Tokopedia campaigns on Threads. Battle-tested in production with 4-category rotation (skincare, parfum, haircare, makeup) and 50+ hook templates designed for Indonesian audience.
-
----
-
-## 🤖 AI Agents: Start Here
-
-If you are an AI coding agent (Claude Code, Cursor, GitHub Copilot, Codex, Cody, Continue, Aider, etc.):
-
-→ **Read [AGENTS.md](./AGENTS.md) first** — canonical operational guide  
-→ Quick reference: [llms.txt](./llms.txt)  
-→ Full LLM doc: [llms-full.txt](./llms-full.txt)  
-→ JSON schemas: [schemas/](./schemas/)  
-
-AGENTS.md contains:
-- Setup checklist (10 items)
-- 5 canonical workflows (single post, auto-pick, batch, hook add, category add)
-- Exit codes table
-- Environment variables reference
-- Hard constraints (what NOT to do)
-- Error handling patterns
-
----
-
-## ⚡ TL;DR for AI Agents
-
-If you are an AI agent reading this to execute a task, here is the canonical workflow:
-
-```text
-PREREQUISITES (one-time setup, done by HUMAN OPERATOR):
-  1. Create Threads/Instagram account     → human signup
-  2. Register Shopee Affiliate program    → human signup at affiliate.shopee.co.id
-  3. Create affiliate link database       → see docs/database-setup.md
-  4. Extract IG/Threads session cookies   → see docs/cookie-extraction.md
-
-EXECUTION FLOW (automatable per post):
-  1. Read affiliate database              → select UNUSED link
-  2. Pick category + hook style           → enforce rotation (no repeat in last 2 posts)
-  3. Generate 2-3 post chain content      → fill template with product name
-  4. Validate dedup                       → check link history + hook similarity
-  5. Run poster.run_post(content)         → headless Playwright posts to Threads
-  6. Mark link as USED in database        → persist history
-  7. Sync database copies                 → if using multi-skill setup
-
-RUN SINGLE POST:
-  python -m threads_poster.cli post \
-    --product "SKINTIFIC 5X Ceramide" \
-    --link "https://s.shopee.co.id/XXXXX" \
-    --category skincare \
-    --hook-style edukasi
-
-BATCH SCHEDULE (cron-compatible):
-  python -m threads_poster.cli schedule --times "08:00,13:00,20:00"
-```
-
----
-
-## 🎯 What This Solves
-
-Posting affiliate content to Threads manually 3x/day = 90+ posts/month. Each post needs:
-- Unique hook angle (avoid spam flag)
-- Real product image (not AI-generated, looks fake)
-- Clean affiliate link insertion (no broken URLs)
-- Category rotation (skincare → parfum → haircare → makeup)
-- Dedup tracking (no link reuse, no hook repetition)
-
-This toolkit automates ALL of that with proven anti-spam patterns.
-
----
-
-## 🏗️ Architecture
+## Arsitektur v1
 
 ```
-threads-affiliate/
-├── threads_poster/              Core library
-│   ├── poster.py                Playwright automation (login → compose → submit)
-│   ├── content_generator.py     Hook templates + 3-post chain builder
-│   ├── dedup.py                 Link history + hook similarity check
-│   ├── database.py              Affiliate link database (Markdown table)
-│   ├── scheduler.py             Cron-compatible scheduler
-│   └── cli.py                   Command-line interface
-│
-├── templates/
-│   ├── hooks_skincare.json      9 hook styles × 3 variants each
-│   ├── hooks_parfum.json
-│   ├── hooks_haircare.json
-│   ├── hooks_makeup.json
-│   └── post2_templates.json     Middle post (review body) templates
-│
-├── docs/
-│   ├── 01-account-setup.md      Threads + Shopee Affiliate signup
-│   ├── 02-database-setup.md     Affiliate link database structure
-│   ├── 03-cookie-extraction.md  Extract IG/Threads cookies
-│   ├── 04-quickstart.md         First post in 5 minutes
-│   ├── 05-customization.md      Custom hooks, voice, schedule
-│   ├── 06-troubleshooting.md    Common errors + fixes
-│   └── ethics-and-tos.md        Important warnings
-│
-├── examples/
-│   ├── single_post.py
-│   ├── batch_schedule.py
-│   └── cron_integration.sh
-│
-└── tests/
+config.yaml                  kriteria produk, jadwal, format post
+data/affiliate_links.md      database link (Markdown, diisi manual)
+templates/                   template v1 — gaya "intip produk" (ditulis ulang)
+tools/run_slot.py            satu slot posting: ambil link → generate →
+                             cek guardrails → cek dedup → posting → tandai USED
+tools/check_draft.py         checker guardrails (bisa dipakai terpisah)
+vendor/threads-affiliate/    kode basis (d4ncboz, MIT) + 1 perbaikan Linux
+ops/crontab.txt              jadwal cron WIB untuk PC
 ```
 
----
+Alur tiap slot (dijalankan `tools/run_slot.py --slot HH:MM`):
 
-## 📋 Prerequisites (Setup Steps for Human)
+1. Ambil link UNUSED berikutnya dari database (kategori sesuai slot).
+2. Generate rantai **2 post**: post 1 = hook (tanpa link), post 2 = isi
+   "intip produk" + CTA + disclosure `#affiliate`; link ditempel poster
+   di post 2 (= self-reply pertama, BUKAN post utama).
+3. `check_draft.py` memeriksa: tanpa klaim "review", tanpa bahasa garansi,
+   disclosure ada, ≤500 karakter/post, link `s.shopee.co.id`. Gagal → batal.
+4. Dedup: link tidak boleh dipakai ulang; gaya hook tidak boleh sama dengan
+   2 post terakhir; kemiripan hook ≤60% dengan 5 post terakhir.
+5. Posting via Playwright + cookie sesi (headless Chromium). Sukses →
+   catat history + tandai link USED. Gagal → exit code non-nol, log.
 
-### Step 1 — Create Threads/Instagram Account
+## Kenapa v1 tidak pakai API resmi
 
-Threads is owned by Meta. You sign up via Instagram:
+**Shopee Affiliate Open API — TERTAHAN.** Dicek langsung di dashboard
+16 Nov 2026 (akun 'pratama', login Google berhasil): menu Open API ADA,
+tapi AppID/Secret kosong (`--`), tombol Apply nonaktif, halaman bilang
+hubungi Shopee untuk minta akses. Link "contact us"-nya malah nyasar ke
+artikel Help Center soal pelanggaran & penalti — bukan form pengajuan.
+Satu-satunya jalur: hubungi CS Shopee via live chat. Sampai akses disetujui,
+produk HANYA bisa masuk lewat database link manual (model repo teman).
 
-1. Download **Instagram** app (Android/iOS) or go to [instagram.com](https://instagram.com)
-2. Sign up with email + phone + username
-3. Verify email + phone
-4. Open [threads.com](https://www.threads.com) → "Continue with Instagram" (Meta SSO auto-creates Threads profile)
-5. Set Threads username (can match IG handle)
-6. Post 2-3 manual posts first (warm up account, prevents new-account spam flag)
+**Threads API resmi — BELUM SIAP.** App Meta 'TemuanHarian Threads API'
+menunggu Kyan menerima undangan tester; App Review untuk
+`threads_content_publish` belum diajukan. Maka v1 posting via Playwright +
+cookie sesi (cara repo teman, sudah terbukti jalan). Ini grey-area menurut
+dokumen repo sendiri: meniru aksi manusia, bukan API resmi. Risiko: akun
+bisa dibatasi/diblokir Meta sewaktu-waktu. Mitigasi: maks 3 post/hari,
+rotasi kategori + hook, dedup, tanpa auto-follow/DM/like.
 
-**⚠️ Important:**
-- Use a real, human-looking profile (not bot-style with stock avatar)
-- Wait 24-48 hours after first manual posts before running automation
-- Don't post more than 3-5 times/day in first week
-
-### Step 2 — Register Shopee Affiliate
-
-The most accessible affiliate program in Indonesia:
-
-1. Go to [affiliate.shopee.co.id](https://affiliate.shopee.co.id)
-2. Sign in with your Shopee account (same as buyer)
-3. Complete profile + KYC (KTP photo, NPWP optional)
-4. Wait approval (24-48 hours)
-5. After approved → Dashboard shows your unique affiliate links
-6. Generate `s.shopee.co.id/XXXXX` short links per product
-
-**Commission structure (as of 2026):**
-- 3-15% per sale depending on category
-- Beauty/skincare ~8-12% (highest category)
-- Cookie window 7 days
-
-### Step 3 — Build Affiliate Link Database
-
-Create `data/affiliate_links.md` following the template in `docs/02-database-setup.md`. Structure:
-
-```markdown
-# Affiliate Link Database
-
-## SKINCARE
-| # | Product | Link | Status | Last Used |
-|---|---------|------|--------|-----------|
-| 1 | SKINTIFIC 5X Ceramide | `https://s.shopee.co.id/XXXXX` | ❌ UNUSED | - |
-| 2 | Azarine Hydrasoothe SPF45 | `https://s.shopee.co.id/YYYYY` | ❌ UNUSED | - |
-```
-
-Aim for **50-100 links** across 4 categories before starting automation. More links = longer rotation runway.
-
-### Step 4 — Extract Session Cookies
-
-Threads uses Instagram session cookies (Meta SSO). Extract them via `browser_cookie3`:
+## Instalasi di PC (bukan VM ini)
 
 ```bash
-python -m threads_poster.cli setup --extract-cookies --chrome-profile "Profile 1"
+# 1. Clone/copy folder ini ke PC, mis. ~/threads-affiliate-system
+# 2. Python 3.10+ + venv + dependensi + browser Playwright
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-v1.txt
+.venv/bin/playwright install chromium
+
+# 3. Ekstrak cookie sesi dari Chrome PC (Chrome harus login IG/Threads).
+#    Modul vendor dipanggil dengan PYTHONPATH (foldernya bernama
+#    threads-affiliate, pakai strip — jadi bukan nama paket Python).
+export PYTHONPATH="$PWD/vendor/threads-affiliate"
+.venv/bin/python -m threads_poster.cli setup --extract-cookies
+.venv/bin/python -m threads_poster.cli setup --validate-cookies
+
+# 4. Isi database link (lihat docs/isi-link-db.md) — target 50-100 link
+# 5. Uji satu slot tanpa posting:
+.venv/bin/python tools/run_slot.py --slot 08:00 --dry-run
+
+# 6. Uji satu post beneran, browser terlihat:
+.venv/bin/python tools/run_slot.py --slot 08:00 --headed
+#    (cek di Threads, lalu putuskan lanjut cron atau tidak)
+
+# 7. Pasang cron (ops/crontab.txt)
+crontab -e
 ```
 
-This will:
-- Locate Chrome's Cookies SQLite database
-- Extract Instagram + Threads domain cookies
-- Save to `~/.threads_poster/cookies/` (NOT in repo, NEVER committed)
-- Validate session with test API call
+> ℹ️ `tools/run_slot.py` sudah mengatur `sys.path` sendiri, jadi cukup
+> `python tools/run_slot.py ...` dari root repo. Perintah vendor
+> (`-m threads_poster.cli ...`) butuh `PYTHONPATH` seperti di langkah 3.
 
-See [docs/03-cookie-extraction.md](docs/03-cookie-extraction.md) for manual extraction methods.
+## Yang masih dibutuhkan dari Kyan
 
----
+1. **Cookie sesi Threads** — diekstrak di PC-nya sendiri
+   (`setup --extract-cookies`, Chrome PC harus login IG/Threads).
+   Cookie = kunci login penuh; jangan pernah dikirim ke siapa pun.
+2. **Database link terisi** — 50–100 produk sesuai kriteria
+   (rating ≥4,8, terjual ≥1 rb, Rp20–100 rb, Star/Mall + XTRA).
+   Lihat `docs/isi-link-db.md`.
+3. **Terima undangan tester** app Meta 'TemuanHarian Threads API'
+   (untuk fase 2 — API resmi).
+4. **Minta akses Open API ke CS Shopee** via live chat (untuk fase 2 —
+   API resmi Shopee). Tidak ada form pengajuan di halaman Open API.
+5. **Satu post uji manual** sebelum cron diaktifkan (langkah 6 di atas).
 
-## 🚀 Quick Start
+## Fase 2 (rencana, belum dibangun)
 
-After completing all 4 prerequisites:
+| Item | Syarat | Perubahan |
+|---|---|---|
+| Shopee Open API | Akses disetujui CS Shopee | `productOfferV2` (sortir komisi) + `generateShortLink` gantikan isi manual DB |
+| Threads API resmi | Tester diterima + App Review lolos | Ganti Playwright → `graph.threads.net` (POST + reply) |
+| AI drafting | Provider gratis 9Router | Ganti template statis → draf LLM + checker tetap jalan |
+| Landing page | — | Etalase ala jagonya.my.id (Next.js) sebagai tujuan link |
 
-```bash
-# Install
-git clone https://github.com/d4ncboz/threads-affiliate
-cd threads-affiliate
-pip install -r requirements.txt
-playwright install chromium
+## Aturan (guardrails.md — ringkas)
 
-# Run a single post
-python -m threads_poster.cli post \
-  --product "SKINTIFIC 5X Ceramide Moisturizer" \
-  --link "https://s.shopee.co.id/XXXXX" \
-  --category skincare \
-  --hook-style edukasi \
-  --image /path/to/product.jpg
+- Link HANYA di post ke-2 (self-reply pertama), tidak pernah di post utama.
+- Dilarang klaim "review"/pemakaian pribadi — formatnya "ilustrasi AI /
+  intip produk".
+- Dilarang bahasa garansi ("dijamin", "pasti ampuh", "termurah", ...).
+- Disclosure `#affiliate` wajib di tiap thread.
+- Maks 3 post/hari. Satu link tidak pernah dipakai dua kali.
+- `--force` tidak ada di sistem ini. Checker menolak = perbaiki drafnya.
 
-# Or schedule batch
-python -m threads_poster.cli schedule --config schedule.json
-```
+## Dokumen lain
 
----
-
-## 🛡️ Anti-Spam Features
-
-Built-in protection that production-tested through 1000+ posts:
-
-| Feature | Implementation |
-|---------|----------------|
-| **Category rotation** | Enforce no-repeat in last 2 posts (db tracks last 2 categories) |
-| **Hook style rotation** | 9 styles per category (edukasi, validasi, storytelling, problem-solving, hook-pancingan, transformasi, social-proof, urgency, controversy) |
-| **Hook similarity check** | Cosine-style word overlap with last 5 posts, reject if >60% |
-| **Link dedup** | Never repeat same affiliate link |
-| **Human typing pattern** | 30ms delay per char, randomized between posts |
-| **Clipboard paste for URL** | Cleaner link insertion than keyboard typing |
-| **Image attachment** | Always uses REAL product image (no AI-gen for review credibility) |
-| **3-post chain limit** | Threads native limit, prevents over-aggressive posting |
-
----
-
-## 📅 Schedule Recommendation
-
-Threads algorithm rewards consistency, penalizes burst posting. Recommended cadence:
-
-```
-Indonesian time zones (WIB):
-  08:00 — Morning commute (high engagement)
-  13:00 — Lunch break
-  20:00 — Evening prime time
-
-→ 3 posts/day × 4 categories = 12 unique product mentions/day
-→ Each link used once = 50 links last ~4 days, 100 links ~8 days
-```
-
-Cron setup in `examples/cron_integration.sh`.
-
----
-
-## ⚖️ Ethics & ToS Disclaimer
-
-**Read [docs/ethics-and-tos.md](docs/ethics-and-tos.md) before running.**
-
-Key principles:
-- Don't post >5/day on a fresh account (Threads will flag)
-- Don't reuse exact same hook text (spam detector)
-- Only promote products you'd actually recommend
-- Disclose affiliate relationship (`#ad`, `#affiliate`, `#produkpilihan`)
-- Respect Threads ToS — automation use case is grey-area, posting frequency must look human
-
-This tool is provided for educational and personal-use purposes. Use responsibly.
-
----
-
-## 🤝 Contributing
-
-PRs welcome for:
-- New hook templates (other categories: fashion, gadget, food, baby)
-- Better dedup algorithms
-- Support for other affiliate platforms (Lazada, TikTok Shop, Tokopedia)
-- Translations (English README, other SEA languages)
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
----
-
-## 📜 License
-
-MIT License. See [LICENSE](LICENSE).
-
----
-
-## 🙏 Acknowledgments
-
-- Playwright team for reliable browser automation
-- `browser_cookie3` for clean session extraction
-- Indonesian affiliate community for hook style inspiration
+- `AUDIT.md` — hasil audit kode repo teman (temuan + risiko).
+- `VENDOR-NOTES.md` — apa yang di-vendor, apa yang diubah.
+- `guardrails.md` — aturan lengkap yang ditegakkan checker.
+- `docs/isi-link-db.md` — cara isi database link dari dashboard Shopee.
+- `vendor/threads-affiliate/docs/` — dokumentasi asli repo (akun, cookie,
+  troubleshooting, etika/ToS).

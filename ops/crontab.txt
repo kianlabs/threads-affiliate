@@ -1,0 +1,30 @@
+# Crontab v1 — @temuanhariann.id (3x/hari, WIB)
+# Pasang di PC Kyan (zona waktu Asia/Jakarta). JANGAN pasang di VM ini.
+# Prasyarat: repo sudah di-clone ke PC, venv aktif / python3 + requirements
+# terpasang, cookies sudah diekstrak, database link sudah terisi.
+#
+# Cara pasang:
+#   crontab -e
+#   (tempel isi file ini, sesuaikan REPO_PATH)
+#
+# Logs: logs/cron.log (dibuat otomatis oleh run_slot.py)
+
+REPO_PATH="$HOME/threads-affiliate-system"
+PYTHON="$REPO_PATH/.venv/bin/python"
+# Modul vendor (threads_poster) tinggal di vendor/threads-affiliate
+export PYTHONPATH="$REPO_PATH/vendor/threads-affiliate"
+
+# 09:00 WIB — dapur (jitter ±0-29 mnt via sleep RANDOM, lihat RISET-JADWAL.md)
+0 9 * * * cd "$REPO_PATH" && sleep $((RANDOM % 1800)) && "$PYTHON" tools/run_slot.py --slot 09:00 >> logs/cron.log 2>&1
+
+# 12:30 WIB — organizer
+30 12 * * * cd "$REPO_PATH" && sleep $((RANDOM % 1800)) && "$PYTHON" tools/run_slot.py --slot 12:30 >> logs/cron.log 2>&1
+
+# 19:30 WIB — kebersihan
+30 19 * * * cd "$REPO_PATH" && sleep $((RANDOM % 1800)) && "$PYTHON" tools/run_slot.py --slot 19:30 >> logs/cron.log 2>&1
+
+# Refresh cookies tiap 6 jam (Chrome di PC harus tetap login IG/Threads)
+0 */6 * * * cd "$REPO_PATH" && "$PYTHON" -m threads_poster.cli setup --extract-cookies >> logs/cron.log 2>&1
+
+# Statistik database harian 23:00 WIB (peringatan kalau link menipis)
+0 23 * * * cd "$REPO_PATH" && "$PYTHON" -m threads_poster.cli db --db data/affiliate_links.md --stats >> logs/db_stats.log 2>&1

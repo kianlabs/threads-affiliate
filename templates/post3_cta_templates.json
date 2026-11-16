@@ -1,15 +1,1 @@
-{
-  "_meta": {
-    "description": "Closing post (post 3/3) — CTA + affiliate link template",
-    "language": "id-ID",
-    "version": "1.0"
-  },
-  "templates": [
-    "Yang mau coba {product}, link di komentar pertama ya.\nAtau cek di sini:\n",
-    "Buat yang nanya link, gw share di sini:\nKlik buat liat harga + diskon hari ini\n",
-    "Kalo lo udah yakin mau coba {product}:\nLangsung cek di link berikut\nAda diskon kalau pakai voucher Shopee\n",
-    "Link {product} di bawah ya, sebelum kehabisan:\n",
-    "Buat yang udah ngintip-ngintip {product}:\nIni link affiliatenya, ada commission buat gw kalo lo beli (gak nambah harga buat lo) 🙏\n",
-    "{product} link aman:\n(Pakai voucher 'NEWUSER' di checkout, dapet diskon tambahan)\n"
-  ]
-}
+{"_meta":{"description":"Closing post (post 2/2 di chain v1) — CTA + link. Link ditempel poster SETELAH teks ini, di post yang sama (self-reply pertama). SEMUA varian wajib memuat disclosure affiliate. v3: +3 varian home living / kos-kosan.","language":"id-ID","version":"3.0-hl"},"templates":["Yang mau intip {product}, linknya di bawah ini 👇\n#affiliate — aku dapat komisi kalau kamu beli lewat link ini, tanpa nambah harga buat kamu.","Buat yang udah penasaran sama {product}: cek harga + review pembelinya di sini 👇\n#ShopeeAffiliate (link affiliate, ada komisi buat aku kalau kamu checkout).","Link {product} di bawah ya 👇\nCek dulu harga hari ini + voucher yang berlaku.\n#affiliate","Kalo udah yakin mau intip {product}: linknya di bawah 👇\nBaca review pembeli dulu sebelum checkout.\n#affiliate — komisi buat aku, harga tetap sama buat kamu.","Buat yang nanya link {product}, ini 👇\n#ShopeeAffiliate — aku dapat komisi dari link ini, kamu gak kena biaya tambahan.","{product} — link intipnya di bawah 👇\nCek rating, review, sama harga terkininya langsung di Shopee.\n#affiliate","Buat yang lagi beresin kos, link {product} di bawah 👇\nCek ukuran + bahannya di listing sebelum checkout.\n#affiliate — komisi buat aku, harga tetap sama buat kamu.","Link {product} buat yang mau intip 👇\nBaca review pembeli dulu, terutama soal ukuran aslinya.\n#ShopeeAffiliate","{product} — link intipnya di bawah 👇\nBandingin dulu sama yang kamu butuhin, baru putuskan.\n#affiliate"]}

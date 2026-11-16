@@ -1,0 +1,67 @@
+# ============================================================
+# Konfigurasi v1 — Sistem Affiliate Shopee → Threads + Facebook
+# Akun: @temuanhariann.id | Niche awal: home living / kos-kosan
+# (diputuskan lewat riset 16 Nov 2026; beauty = expansion #2)
+# ============================================================
+
+akun:
+  threads_username: "@temuanhariann.id"
+  shopee_affiliate: "pratama"          # nama akun di dashboard affiliate.shopee.co.id
+
+# Jadwal posting (WIB, Asia/Jakarta). Server/PC harus di zona waktu ini.
+jadwal:
+  timezone: "Asia/Jakarta"
+  slot:
+    "09:00": "dapur"
+    "12:30": "organizer"
+    "19:30": "kebersihan"
+  # Slot riset 16 Nov 2026 (RISET-JADWAL.md): 09:00/12:30/19:30 WIB,
+  # jitter ±15-30 mnt/hari. Jadwal lama d4ncboz 08:00/13:00/20:00.
+  posts_per_day_max: 3
+
+# Kriteria produk — WAJIB dicek saat isi database link (lihat docs/isi-link-db.md)
+kriteria_produk:
+  rating_min: 4.8            # dicek di halaman produk Shopee (UI affiliate tidak menampilkan rating)
+  terjual_min: 1000
+  harga_min_rp: 20000
+  harga_max_rp: 100000
+  seller: ["Star", "Star+", "Mall"]   # Star Seller / Shopee Mall
+  komisi_xtra_wajib: true    # hanya produk ber-Komisi XTRA yang masuk database
+
+# Format posting — aturan Kyan (lihat guardrails.md)
+format_post:
+  num_posts: 2               # 2 = hook + CTA. Link ada di post ke-2 (self-reply pertama),
+                             # BUKAN di post utama. Jangan ubah ke 3 tanpa alasan.
+  link_di_post_utama: false
+  link_shortener_dilarang: ["bit.ly", "s.id", "tinyurl.com"]
+  disclosure_wajib: "#affiliate"   # harus muncul di tiap thread (post 2/CTA)
+  max_chars_per_post: 500    # batas Threads
+
+# Path (relatif terhadap root repo ini; cookies SELALU di luar repo)
+path:
+  cookies: "~/.threads_poster/cookies/session.json"
+  database: "data/affiliate_links.md"
+  history: "data/post_history.json"
+  templates: "templates"
+  logs: "logs/cron.log"
+
+# Vendor (basis kode — jangan edit langsung kecuali via VENDOR-NOTES.md)
+vendor:
+  repo: "https://github.com/d4ncboz/threads-affiliate"
+  dir: "vendor/threads-affiliate"
+  license: "MIT"
+
+# Fase 2 (BELUM AKTIF — lihat README.md)
+fase2:
+  shopee_open_api:
+    status: "TERTAHAN — akun belum punya akses (AppID/Secret kosong, tombol Apply nonaktif)"
+    catatan: "Link 'contact us' di halaman Open API nyasar ke artikel Help Center soal pelanggaran, bukan form pengajuan. Jalur yang tersisa: hubungi CS Shopee via live chat."
+  threads_official_api:
+    status: "MENUNGGU — undangan tester app Meta 'TemuanHarian Threads API' belum diterima Kyan; App Review threads_content_publish belum diajukan"
+  ai_drafting:
+    status: "RENCANA — draf AI via provider gratis 9Router (bukan template statis)"
+
+# Facebook (DITAMBAH 16 Nov atas perintah Kyan — BELUM AKTIF)
+facebook:
+  status: "RENCANA — upload ke Facebook juga (Page Temuan Harian); setup profil Page + Meta Ads menyusul"
+  page: "Temuan Harian"
