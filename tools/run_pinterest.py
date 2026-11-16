@@ -9,8 +9,8 @@ Alur:
   4. Gambar WAJIB (kolom Image URL di database). Kalau kosong -> BATAL
      dengan pesan jelas (exit 4). JANGAN scraping gambar dari Shopee.
   5. Bangun judul + deskripsi Pin, cek guardrails via check_draft:
-     kata 'affiliate' dilarang di teks terlihat; disclosure '#ad' di
-     AWAL deskripsi + kalimat komisi tanpa kata 'affiliate'.
+     kata 'komisi' / 'commission' / 'affiliate' dilarang di teks
+     terlihat; disclosure '#ad' di AWAL deskripsi, tanpa kalimat komisi.
   6. Dry-run: tampilkan payload, tidak memanggil API.
      Live: POST /v5/pins, verifikasi GET, catat riwayat.
 
@@ -110,11 +110,7 @@ def build_pin(product: str, category: str, link: str) -> tuple[str, str]:
     if len(title) > 100:
         title = title[:97].rstrip() + "..."
     blurb = BLURB.get(category, "Buat kos biar lebih rapi.")
-    description = (
-        f"#ad {product} — {blurb}\n\n"
-        f"Aku dapat komisi kalau kamu beli lewat link ini, "
-        f"tanpa biaya tambahan buat kamu."
-    )
+    description = f"#ad {product} — {blurb}"
     if len(description) > 500:
         description = description[:497].rstrip() + "..."
     return title, description

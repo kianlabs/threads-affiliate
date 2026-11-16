@@ -13,7 +13,6 @@ API v5 resmi.
   aplikasi Pinterest (kemitraan resmi Shopee x Pinterest) — setelah Pin
   terbit, buka Pin di aplikasi Pinterest → Edit Pin → Tag products → cari
   produk Shopee-nya (maks 5 produk/Pin). Tagging manual ini jalur yang
-  langsung menghasilkan komisi; Pin API hanya jalur discovery.
 - TIDAK BISA: melihat Pin publik sebelum Standard access. Akun API Trial:
   Pin hanya terlihat oleh pembuatnya (sandbox). Standard access butuh
   pengajuan + video demo alur OAuth (lihat bawah).
@@ -87,8 +86,6 @@ systemctl --user list-timers | grep pinterest
 
 ## Aturan (guardrails.md §4b)
 
-- Deskripsi Pin WAJIB diawali `#ad `, diikuti kalimat komisi tanpa kata
-  "affiliate": "Aku dapat komisi kalau kamu beli lewat link ini, tanpa
   biaya tambahan buat kamu."
 - Kata "affiliate" dilarang di judul/deskripsi Pin (dicek `check_draft.py`).
 - Judul maks 100 karakter, deskripsi maks 500 karakter.

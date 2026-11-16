@@ -20,7 +20,11 @@ Produk TIDAK PERNAH dipegang/dicoba oleh akun ini. Maka dilarang keras:
   "hasil di kulit gw", "gw test", "repurchase", "beli ulang".
 - Klaim hasil: "rontok berkurang 70%", "tekstur berubah", "tahan 12 jam"
   (kecuali mengutip deskripsi seller dengan kata "menurut deskripsi seller").
-- Kata "review" untuk produk yang tidak dipegang.
+- Kata "review" sebagai klaim pengalaman pribadi akun ("gw review",
+  "review jujur gw") untuk produk yang tidak dipegang. YANG BOLEH:
+  membahas ULASAN PEMBELI di listing ("menurut ulasan pembeli",
+  "rating 4.8+, ribuan terjual", "yang paling sering dipuji pembeli")
+  — itu fokus review sistem ini, bukan pengalaman akun.
 - Sebelum/sesudah (before-after) palsu.
 
 Format yang benar: **"ilustrasi AI / intip produk"** — bahas produk dari
@@ -35,25 +39,30 @@ Dilarang: "dijamin", "pasti" (hasil), "100% ampuh", "terjamin", "paling murah",
 
 Yang boleh: harga + rating + jumlah terjual apa adanya dari listing.
 
-## 4. Disclosure — wajib di tiap thread (tanpa kata "affiliate")
+## 4. TIDAK ADA kata komisi / affiliate / commission di teks post
 
-Aturan Kyan 16 Nov 2026 17:56: kata "affiliate" DILARANG muncul di post yang
-terlihat publik — termasuk `#affiliate` dan `#ShopeeAffiliate`. `check_draft.py`
-menolak post yang mengandung kata itu (parameter `affiliate_id` di URL link
-dikecualikan: itu atribusi komisi, bukan teks yang dibaca pembaca).
+Aturan Kyan 16 Nov 2026 18:50 (mengalahkan aturan 17:56): kata "komisi",
+"commission", "affiliate", "#affiliate", "#ShopeeAffiliate", "link
+affiliate", "link berbayar", "aku dapat komisi", "tanpa nambah harga"
+dan kalimat sejenisnya DILARANG muncul di SEMUA teks post yang terlihat
+publik — hook, post 2/CTA, deskripsi. `check_draft.py` menolak post yang
+mengandung kata itu (parameter `affiliate_id` di URL link dikecualikan:
+itu atribusi, bukan teks yang dibaca pembaca).
 
-Tiap thread WAJIB memuat kalimat komisi ini, di post CTA:
+TIDAK ADA disclosure komisi di teks post. Jangan menulis kalimat komisi
+dalam bentuk apa pun.
 
-- "Kalau kamu beli lewat link ini, aku dapat komisi." (tanpa biaya tambahan
-  buat kamu — boleh ditambah, tapi tanpa kata "affiliate".)
+RISIKO (dicatat, tapi ikuti perintah Kyan): tanpa disclosure, ada risiko
+teguran dari Shopee / Threads / Meta karena platform mengharuskan
+pengungkapan hubungan berbayar. Sistem mengikuti perintah Kyan; kalau
+Kyan mengubah pikiran, disclosure dikembalikan lewat revisi template.
 
 ## 4b. Disclosure Pinterest — "#ad" di awal deskripsi
 
-Pin Pinterest WAJIB diawali `#ad` di deskripsi (aturan Pinterest: disclosure
-harus terlihat sebelum deskripsi terpotong), diikuti kalimat komisi yang sama
-seperti di atas — juga tanpa kata "affiliate". Contoh: "#ad {produk} — ...
-Aku dapat komisi kalau kamu beli lewat link ini, tanpa biaya tambahan buat
-kamu." Tagging produk Shopee dilakukan MANUAL di aplikasi Pinterest
+Pin Pinterest WAJIB diawali `#ad` di deskripsi (aturan Pinterest:
+disclosure harus terlihat sebelum deskripsi terpotong). TIDAK ADA kalimat
+komisi setelahnya. Contoh: "#ad {produk} — {alasan singkat dari ulasan
+pembeli}". Tagging produk Shopee dilakukan MANUAL di aplikasi Pinterest
 (kemitraan resmi Shopee x Pinterest); API v5 tidak bisa tagging.
 
 ## 5. Batas teknis Threads

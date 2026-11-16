@@ -26,8 +26,8 @@ Alur tiap slot (dijalankan `tools/run_slot.py --slot HH:MM`):
 
 1. Ambil link UNUSED berikutnya dari database (kategori sesuai slot).
 2. Generate rantai **2 post**: post 1 = hook (tanpa link, tanpa nama
-   produk), post 2 = isi "intip produk" + CTA + disclosure komisi
-   TANPA kata "affiliate" (aturan Kyan 16 Nov 2026); link ditempel
+   produk), post 2 = isi "intip produk" fokus review + CTA TANPA kata-kata
+   terlarang (aturan Kyan 16 Nov 2026 18:50); link ditempel
    poster di post 2 (= self-reply pertama, BUKAN post utama).
 3. `check_draft.py` memeriksa: tanpa klaim "review", tanpa bahasa garansi,
    disclosure ada, ≤500 karakter/post, link `s.shopee.co.id`. Gagal → batal.

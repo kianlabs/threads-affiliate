@@ -13,8 +13,10 @@ Aturan yang dicek (lihat guardrails.md):
   1. Post utama (post 1) tidak boleh berisi link.
   2. Larangan klaim "review" / pemakaian pribadi.
   3. Larangan bahasa garansi.
-  4. Disclosure komisi wajib ada di thread (tanpa kata 'affiliate' — aturan Kyan 16 Nov 2026).
-  4b. Kata 'affiliate' dilarang di semua post (aturan Kyan 16 Nov 2026).
+  4. Kata 'komisi' / 'commission' / 'affiliate' DILARANG di semua teks post
+     yang terlihat (aturan Kyan 16 Nov 2026 18:50) — TIDAK ADA disclosure
+     komisi di teks post. Parameter affiliate_id di URL link dikecualikan
+     (atribusi, bukan teks yang dibaca pembaca).
   5. Maks 500 karakter per post.
   6. Link harus s.shopee.co.id / shope.ee; shortener lain dilarang.
   7. Hook sebaiknya <= 80 karakter (peringatan, bukan error).
@@ -67,8 +69,10 @@ GUARANTEE_PATTERNS = [
 BANNED_SHORTENERS = ["bit.ly", "s.id", "tinyurl.com", "goo.gl", "t.co"]
 ALLOWED_LINK_HOSTS = ["s.shopee.co.id", "shope.ee"]
 URL_RE = re.compile(r"https?://[^\s)\"']+")
-DISCLOSURE_RE = re.compile(r"komisi", re.I)
-AFFILIATE_WORD_RE = re.compile(r"affiliate", re.I)
+# Kata terlarang di teks yang terlihat (aturan Kyan 16 Nov 2026 18:50).
+# URL dikecualikan dari cek ini (parameter affiliate_id wajib untuk atribusi).
+BANNED_WORD_RE = re.compile(r"\b(komisi|commission|affiliate)\b", re.I)
+AFFILIATE_WORD_RE = BANNED_WORD_RE
 
 REVIEW_RES = [re.compile(p, re.I) for p in REVIEW_PATTERNS]
 GUARANTEE_RES = [re.compile(p, re.I) for p in GUARANTEE_PATTERNS]
@@ -92,15 +96,17 @@ def check_chain(posts: list[str], affiliate_link: str = "") -> list[dict]:
             "detail": f"Post 1 mengandung link: {urls_post1[0]}",
         })
 
-    # 1b. Kata 'affiliate' dilarang di semua post (aturan Kyan 16 Nov 2026).
-    # URL dikecualikan: parameter affiliate_id di link Shopee wajib ada
-    # (atribusi komisi) dan bukan kata yang dibaca pembaca.
+    # 1b. Kata 'komisi' / 'commission' / 'affiliate' dilarang di semua post
+    # (aturan Kyan 16 Nov 2026 18:50). URL dikecualikan: parameter
+    # affiliate_id di link Shopee wajib ada untuk atribusi dan bukan kata
+    # yang dibaca pembaca.
     for i, text in enumerate(posts, start=1):
         visible = URL_RE.sub("", text)
-        if AFFILIATE_WORD_RE.search(visible):
+        m = BANNED_WORD_RE.search(visible)
+        if m:
             problems.append({
-                "level": "ERROR", "rule": "kata-affiliate-dilarang",
-                "detail": f"Post {i}: kata 'affiliate' dilarang.",
+                "level": "ERROR", "rule": "kata-terlarang",
+                "detail": f"Post {i}: kata '{m.group(0)}' dilarang.",
             })
 
     # 2 & 3. Klaim review + garansi di semua post
@@ -123,15 +129,10 @@ def check_chain(posts: list[str], affiliate_link: str = "") -> list[dict]:
                 })
                 break
 
-    # 4. Disclosure komisi wajib di thread (cek di post terakhir)
-    joined = "\n".join(posts)
-    if not DISCLOSURE_RE.search(joined):
-        problems.append({
-            "level": "ERROR", "rule": "disclosure",
-            "detail": "Tidak ada disclosure komisi di thread "
-                      "(tulis 'aku dapat komisi kalau kamu beli lewat "
-                      "link ini').",
-        })
+    # 4. TIDAK ADA disclosure komisi di teks post (aturan Kyan 18:50).
+    # Aturan ini sudah ditegakkan oleh cek 1b di atas: kata 'komisi' /
+    # 'commission' / 'affiliate' di teks yang terlihat langsung ditolak.
+    # Tidak ada lagi kewajiban menulis kalimat komisi.
 
     # 5. Batas 500 karakter
     for i, text in enumerate(posts, start=1):

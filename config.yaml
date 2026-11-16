@@ -34,9 +34,9 @@ format_post:
                              # BUKAN di post utama. Jangan ubah ke 3 tanpa alasan.
   link_di_post_utama: false
   link_shortener_dilarang: ["bit.ly", "s.id", "tinyurl.com"]
-  disclosure_wajib: "kalimat komisi tanpa kata 'affiliate'"  # aturan Kyan 16 Nov 17:56
-    # kata 'affiliate' (termasuk #affiliate / #ShopeeAffiliate) DILARANG di post.
-    # Disclosure wajib: "aku dapat komisi kalau kamu beli lewat link ini" (post 2/CTA).
+  disclosure_wajib: "TIDAK ADA — kata komisi/commission/affiliate DILARANG di teks post"  # aturan Kyan 16 Nov 18:50
+    # kata 'komisi' / 'commission' / 'affiliate' (termasuk #affiliate /
+    # #ShopeeAffiliate) DILARANG di post. TIDAK ADA disclosure komisi.
   max_chars_per_post: 500    # batas Threads
 
 # Path (relatif terhadap root repo ini; cookies SELALU di luar repo)
@@ -75,7 +75,7 @@ pinterest:
   board_id: ""             # isi setelah buat board di Pinterest (mis. board home living/kos)
   max_pins_per_day: 1      # Pinterest melarang Pin afiliasi "repetitif / jumlah besar"
   jadwal: "10:00"          # timer systemd DISABLED (ops/pinterest-1000.timer)
-  disclosure: "#ad di awal deskripsi + kalimat komisi tanpa kata 'affiliate'"
+  disclosure: "#ad di awal deskripsi (tanpa kalimat komisi)"
   token_path: "~/.pinterest_poster/pinterest_token.env"
 
 # Facebook (DITAMBAH 16 Nov atas perintah Kyan — BELUM AKTIF)
