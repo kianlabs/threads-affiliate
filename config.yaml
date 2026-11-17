@@ -17,7 +17,7 @@ jadwal:
     "19:30": "kebersihan"
   # Slot riset 16 Nov 2026 (RISET-JADWAL.md): 09:00/12:30/19:30 WIB,
   # jitter ±15-30 mnt/hari. Jadwal lama d4ncboz 08:00/13:00/20:00.
-  posts_per_day_max: 4
+  posts_per_day_max: 8
 
 # Kriteria produk — WAJIB dicek saat isi database link (lihat docs/isi-link-db.md)
 kriteria_produk:

@@ -22,6 +22,11 @@ Aturan keras:
   bila attach gagal (file tidak ada / tombol tidak ada / preview tidak
   muncul). Terbukti via probe: klik Attach media -> input file muncul
   (accept image/* + video/*).
+- 17 Nov 2026 malam: --profile HANDLE — pakai persistent Chromium
+  profile ~/.threads_poster/profiles/HANDLE (pola fork threads-mcp)
+  sebagai ganti session.json, supaya 1 akun = 1 profil yang tidak
+  pernah di-switch. Identitas dicek ke profil akun itu; histori
+  dicatat dengan field "account".
 
 Pemakaian (dari ~/threads-affiliate-system, di PC):
   xvfb-run python3 tools/comment_playwright.py --url <post_url> --text "<teks>"
@@ -94,9 +99,9 @@ def safe_goto(page, url: str) -> bool:
         return False
 
 
-def verify_identity(page) -> bool:
-    """Buka profil @shopee_harian; True bila tombol 'Edit profile' ada."""
-    if not safe_goto(page, "https://www.threads.com/@shopee_harian"):
+def verify_identity(page, handle: str = "shopee_harian") -> bool:
+    """Buka profil @<handle>; True bila tombol 'Edit profile' ada."""
+    if not safe_goto(page, f"https://www.threads.com/@{handle}"):
         return False
     return page.get_by_text("Edit profile", exact=False).count() > 0
 
@@ -304,8 +309,10 @@ def verify_posted(page, url: str, text: str, count_before) -> tuple[bool, str]:
 
 
 def record_history(url: str, text: str, status: str, reason: str,
-                   image: str | None = None) -> None:
+                   image: str | None = None,
+                   account: str = "shopee_harian") -> None:
     entry = {"date": time.strftime("%Y-%m-%d"), "platform": "threads",
+             "account": account,
              "post_url": url, "text": text, "status": status,
              "reason": reason, "via": "playwright"}
     if image:
@@ -334,6 +341,10 @@ def main() -> int:
                     help="Path 1 foto/video untuk di-attach ke komen "
                          "(pilot 17 Nov 2026). Relatif ke repo bila bukan "
                          "path absolut.")
+    ap.add_argument("--profile", default=None,
+                    help="Pakai persistent Chromium profile HANDLE "
+                         "(~/.threads_poster/profiles/HANDLE) sebagai ganti "
+                         "session.json — untuk akun Threads ke-2 dst.")
     args = ap.parse_args()
 
     g = check_guardrail(args.text, allow_link=args.allow_link)
@@ -344,19 +355,28 @@ def main() -> int:
 
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=False,
-            args=["--no-sandbox", "--disable-dev-shm-usage"])
-        ctx = browser.new_context(viewport={"width": 1280, "height": 800})
-        ctx.add_cookies(load_cookies())
+        handle = args.profile or "shopee_harian"
+        browser = None
+        if args.profile:
+            import profile_context
+            print("profile:",
+                  profile_context.profile_dir(args.profile))
+            ctx = profile_context.launch_profile_context(p, args.profile)
+        else:
+            browser = p.chromium.launch(
+                headless=False,
+                args=["--no-sandbox", "--disable-dev-shm-usage"])
+            ctx = browser.new_context(
+                viewport={"width": 1280, "height": 800})
+            ctx.add_cookies(load_cookies())
         page = ctx.new_page()
         try:
             print("== verifikasi identitas ==")
-            if not verify_identity(page):
-                print("BATAL: sesi bukan @shopee_harian "
+            if not verify_identity(page, handle):
+                print(f"BATAL: sesi bukan @{handle} "
                       "(tombol Edit profile tidak ada)")
                 return 3
-            print("identitas OK: @shopee_harian")
+            print(f"identitas OK: @{handle}")
             page.screenshot(path=str(SHOTS / "30-profile.png"))
 
             print("== buka postingan target ==")
@@ -412,7 +432,8 @@ def main() -> int:
             sent = submit_reply(page, mode)
             print("submit:", sent)
             if not sent["ok"]:
-                record_history(args.url, args.text, "failed", sent["error"])
+                record_history(args.url, args.text, "failed", sent["error"],
+                               account=handle)
                 return 6
             page.screenshot(path=str(SHOTS / "34-sent.png"))
             ok, detail = verify_posted(page, args.url, args.text,
@@ -423,12 +444,15 @@ def main() -> int:
                 "posted" if ok else "posted_unverified",
                 detail if ok else
                 "terkirim tapi tidak tampil saat verifikasi",
-                image=args.image)
+                image=args.image, account=handle)
             print("LIVE SELESAI — status:",
                   "posted" if ok else "posted_unverified")
             return 0 if ok else 7
         finally:
-            browser.close()
+            if browser is not None:
+                browser.close()
+            else:
+                ctx.close()
 
 
 if __name__ == "__main__":

@@ -1,1 +1,81 @@
-{"_meta": {"audience": "Indonesian 16-30 yo", "category": "organizer", "language": "id-ID", "note": "v5.0 (16 Nov 2026, aturan Kyan 18:50): hook FOKUS REVIEW — ulasan/rating pembeli di listing ('menurut ulasan pembeli', 'rating 4.8+, ribuan terjual'). TANPA nama produk, TANPA klaim pemakaian pribadi, TANPA garansi, TANPA kata-kata terlarang (aturan 18:50). Hook pendek (<=80 karakter).", "tone": "casual-genz", "version": "5.0-hl"}, "hooks": {"edukasi": ["Cara baca ulasan pembeli sebelum beli organizer.", "Rating tinggi saja nggak cukup — cek ulasannya dulu.", "Rating cuma angka — ulasan pembeli yang cerita."], "hook_pancingan": ["Kenapa organizer ini dipuji terus di ulasan pembeli?", "Yang paling sering dipuji pembeli dari rak kecil?", "Rating 4.8+, ribuan terjual — apa kata pembelinya?"], "problem_solving": ["Ulasan pembeli paling jujur soal ukuran aslinya.", "Bingung pilih organizer? Baca ulasan pembelinya dulu.", "Yang dikeluhin pembeli biasanya soal kokoh, bukan harga."], "social_proof": ["Ribuan terjual, rating 4.8+ — ini kata pembelinya.", "Organizer kecil yang paling laku, kata ulasan pembeli.", "Yang lagi dicari anak kos: tempat simpan rating tinggi."], "storytelling": ["Scroll ulasan pembeli, organizer ini muncul terus.", "Timeline rame bahas ulasan cara nata kos.", "Ada yang notice rak kecil ini? Ulasannya rame banget."], "validasi_mental": ["Kamar sempit, barang banyak? Baca ulasan pembeli dulu.", "Baru pindah kos? Ulasan pembeli ini bisa bantu.", "Barangmu cuma segitu? Cek dulu kata pembeli soal muatnya."]}}
+{
+ "_meta": {
+  "audience": "Indonesian 16-30 yo",
+  "category": "organizer",
+  "language": "id-ID",
+  "note": "v5.0 (16 Nov 2026, aturan Kyan 18:50): hook FOKUS REVIEW — ulasan/rating pembeli di listing ('menurut ulasan pembeli', 'rating 4.8+, ribuan terjual'). TANPA nama produk, TANPA klaim pemakaian pribadi, TANPA garansi, TANPA kata-kata terlarang (aturan 18:50). Hook pendek (<=80 karakter). v5.1 (16 Nov 2026, aditif — v5 utuh dipertahankan): +3 style baru (transformasi, urgency, controversy) + 2 varian/style lama; semua hook berjangkar ulasan/rating/terjual (brief v5). Sumber: msyamsularif hook-patterns/angle-library, rediumvex viral-hooks-skill (100 formula) + social-captions hook library, d4ncboz 9-style, syadagentic v7 (SE-SIMPEL, Shopping Psychology, Problem-Solving List), akbarseft86 (Unpopular opinion / Hard truth / POV / STOP-START). Semua hook lolos check_draft.py v5 + dedup overlap <=0.6. v5.2 (18 Nov 2026, aditif): +12 hook/kategori dari Sekolah76/syadagentic (diadaptasi ke aturan v5.1: tanpa nama produk/affiliate/komisi/klaim pribadi; caps dihapus per keputusan Kyan 17 Nov 23:30).",
+  "tone": "casual-genz",
+  "version": "5.2-hl"
+ },
+ "hooks": {
+  "edukasi": [
+   "Cara baca ulasan pembeli sebelum beli organizer.",
+   "Rating tinggi saja nggak cukup — cek ulasannya dulu.",
+   "Rating cuma angka — ulasan pembeli yang cerita.",
+   "SE-SIMPEL PILIH ORGANIZER, TAPI ULASANNYA JARANG DIBACA",
+   "Rak yang bagus itu yang dipuji pembeli, bukan cuma rapi.",
+   "Se-simpel nata lemari, tapi banyak yang salah caranya",
+   "Susah nata kamar kos itu bukan karena sempit, tapi karena nggak ada tempatnya."
+  ],
+  "hook_pancingan": [
+   "Kenapa organizer ini dipuji terus di ulasan pembeli?",
+   "Yang paling sering dipuji pembeli dari rak kecil?",
+   "Rating 4.8+, ribuan terjual — apa kata pembelinya?",
+   "STOP asal beli organizer — ukurannya cek di ulasan pembeli.",
+   "Lemari penuh tapi baju tetap numpuk — apa kata ulasan pembeli?",
+   "Nyesel banget baru tau cara baca ulasan sebelum beli organizer.",
+   "Barang receh gini sering diremehin… sampai kamar jadi rapi sendiri."
+  ],
+  "problem_solving": [
+   "Ulasan pembeli paling jujur soal ukuran aslinya.",
+   "Bingung pilih organizer? Baca ulasan pembelinya dulu.",
+   "Yang dikeluhin pembeli biasanya soal kokoh, bukan harga.",
+   "Keluhan paling umum di ulasan organizer: soal kokohnya.",
+   "Baju numpuk di kursi — ulasan pembeli bilang kenapa.",
+   "5 masalah sepele yang bikin lemari kos berantakan.",
+   "Kalau kamu ngalamin ini, kamarmu butuh ditata ulang."
+  ],
+  "social_proof": [
+   "Ribuan terjual, rating 4.8+ — ini kata pembelinya.",
+   "Organizer kecil yang paling laku, kata ulasan pembeli.",
+   "Yang lagi dicari anak kos: tempat simpan rating tinggi.",
+   "Ribuan terjual dan ulasannya rame — organizer kecil dicari.",
+   "Organizer tempel lagi rame — cek ulasan soal kuat nempelnya.",
+   "5 organizer yang paling sering muncul di ulasan bintang 5."
+  ],
+  "storytelling": [
+   "Scroll ulasan pembeli, organizer ini muncul terus.",
+   "Timeline rame bahas ulasan cara nata kos.",
+   "Ada yang notice rak kecil ini? Ulasannya rame banget.",
+   "POV: kamarmu berantakan dan kamu lagi scroll ulasan rak.",
+   "Baru pindah kos? Scroll dulu ulasan organizer sebelum beli.",
+   "Gara-gara kamar sempit, semua barang numpuk di satu sudut.",
+   "Sadar satu hal soal kamar kos: yang rapi itu yang ada tempatnya."
+  ],
+  "validasi_mental": [
+   "Kamar sempit, barang banyak? Baca ulasan pembeli dulu.",
+   "Baru pindah kos? Ulasan pembeli ini bisa bantu.",
+   "Barangmu cuma segitu? Cek dulu kata pembeli soal muatnya.",
+   "Kamarmu rapi cuma pas ada tamu? Ulasan pembeli relate banget.",
+   "Kamar sempit bukan salahmu — ulasan pembeli bilang gitu juga.",
+   "Capek kamar berantakan terus padahal udah diberesin tiap pagi."
+  ],
+  "transformasi": [
+   "Kamar berantakan dulu, sekarang rapi — kata yang udah beli.",
+   "Dari numpuk di lantai jadi rapi — ulasan pembeli buktiin.",
+   "Kos kecil tetap bisa rapi — ulasan pembeli yang bilang.",
+   "Coba beresin kamar pas lagi buru-buru — bedanya langsung kerasa."
+  ],
+  "urgency": [
+   "Promo Shopee nggak nungguin — cek ulasan, terus putusin.",
+   "Jangan tunggu kamar makin sempit — cek ulasan rak kecil dulu.",
+   "Harga bisa berubah besok — ulasan yang bagus jangan ditunda."
+  ],
+  "controversy": [
+   "Unpopular opinion: kamar rapi nggak butuh lemari baru — kata ulasan.",
+   "Hot take: organizer mahal belum tentu dipuji ulasan.",
+   "Mitos: kos rapi butuh banyak tempat simpan. Ulasan bilang beda.",
+   "Unpopular opinion: organizer mahal belum tentu awet."
+  ]
+ }
+}

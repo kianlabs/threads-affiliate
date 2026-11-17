@@ -1,1 +1,81 @@
-{"_meta": {"audience": "Indonesian 16-30 yo", "category": "dapur", "language": "id-ID", "note": "v5.0 (16 Nov 2026, aturan Kyan 18:50): hook FOKUS REVIEW — ulasan/rating pembeli di listing ('menurut ulasan pembeli', 'rating 4.8+, ribuan terjual'). TANPA nama produk, TANPA klaim pemakaian pribadi, TANPA garansi, TANPA kata-kata terlarang (aturan 18:50). Hook pendek (<=80 karakter).", "tone": "casual-genz", "version": "5.0-hl"}, "hooks": {"edukasi": ["Cara baca ulasan pembeli sebelum beli alat dapur.", "Rating tinggi saja nggak cukup — cek ulasannya dulu.", "Ulasan pembeli itu peta, rating cuma angkanya."], "hook_pancingan": ["Kenapa alat dapur ini dipuji terus di ulasan pembeli?", "Yang paling sering dipuji pembeli dari alat dapur kecil?", "Rating 4.8+, ribuan terjual — apa kata pembelinya?"], "problem_solving": ["Ulasan pembeli paling jujur soal ukuran aslinya.", "Bingung pilih alat dapur? Baca ulasan pembelinya dulu.", "Yang dikeluhin pembeli biasanya soal ukuran, bukan harga."], "social_proof": ["Ribuan terjual, rating 4.8+ — ini kata pembelinya.", "Alat dapur kecil yang paling laku, kata ulasan pembeli.", "Yang lagi dicari anak kos: alat dapur rating tinggi."], "storytelling": ["Scroll ulasan pembeli, alat dapur ini muncul terus.", "Timeline rame bahas ulasan alat dapur anak kos.", "Ada yang notice alat dapur ini? Ulasannya rame banget."], "validasi_mental": ["Kalau kamu ngekos, baca ulasan pembeli dulu sebelum beli.", "Capek makan luar terus? Ulasan pembeli ini bisa bantu.", "Masak sekali sehari? Cek dulu kata pembeli soal ukurannya."]}}
+{
+ "_meta": {
+  "audience": "Indonesian 16-30 yo",
+  "category": "dapur",
+  "language": "id-ID",
+  "note": "v5.0 (16 Nov 2026, aturan Kyan 18:50): hook FOKUS REVIEW — ulasan/rating pembeli di listing ('menurut ulasan pembeli', 'rating 4.8+, ribuan terjual'). TANPA nama produk, TANPA klaim pemakaian pribadi, TANPA garansi, TANPA kata-kata terlarang (aturan 18:50). Hook pendek (<=80 karakter). v5.1 (16 Nov 2026, aditif — v5 utuh dipertahankan): +3 style baru (transformasi, urgency, controversy) + 2 varian/style lama; semua hook berjangkar ulasan/rating/terjual (brief v5). Sumber: msyamsularif hook-patterns/angle-library, rediumvex viral-hooks-skill (100 formula) + social-captions hook library, d4ncboz 9-style, syadagentic v7 (SE-SIMPEL, Shopping Psychology, Problem-Solving List), akbarseft86 (Unpopular opinion / Hard truth / POV / STOP-START). Semua hook lolos check_draft.py v5 + dedup overlap <=0.6. v5.2 (18 Nov 2026, aditif): +12 hook/kategori dari Sekolah76/syadagentic (diadaptasi ke aturan v5.1: tanpa nama produk/affiliate/komisi/klaim pribadi; caps dihapus per keputusan Kyan 17 Nov 23:30).",
+  "tone": "casual-genz",
+  "version": "5.2-hl"
+ },
+ "hooks": {
+  "edukasi": [
+   "Cara baca ulasan pembeli sebelum beli alat dapur.",
+   "Rating tinggi saja nggak cukup — cek ulasannya dulu.",
+   "Ulasan pembeli itu peta, rating cuma angkanya.",
+   "SE-SIMPEL BACA ULASAN PEMBELI, TAPI BANYAK YANG SALAH CARANYA",
+   "Rating 4.8+ itu hasil ratusan ulasan — bukan satu orang doang.",
+   "Se-simpel nata dapur, tapi banyak yang salah caranya",
+   "Susah nata dapur kos itu bukan karena sempit, tapi karena nggak ada tempatnya."
+  ],
+  "hook_pancingan": [
+   "Kenapa alat dapur ini dipuji terus di ulasan pembeli?",
+   "Yang paling sering dipuji pembeli dari alat dapur kecil?",
+   "Rating 4.8+, ribuan terjual — apa kata pembelinya?",
+   "Alat dapur kecil ini dipuji terus — tapi apa kata ulasannya?",
+   "STOP beli sebelum baca ulasan — ukurannya ada di sana.",
+   "Nyesel banget baru tau cara baca ulasan sebelum beli alat dapur.",
+   "Barang receh gini sering diremehin… sampai dapur jadi rapi sendiri."
+  ],
+  "problem_solving": [
+   "Ulasan pembeli paling jujur soal ukuran aslinya.",
+   "Bingung pilih alat dapur? Baca ulasan pembelinya dulu.",
+   "Yang dikeluhin pembeli biasanya soal ukuran, bukan harga.",
+   "Satu keluhan yang paling sering muncul di ulasan pembeli.",
+   "Panci numpuk, spatula hilang — ulasan pembeli bilang apa?",
+   "5 masalah sepele yang bikin dapur kos berantakan.",
+   "Kalau kamu ngalamin ini, dapurmu butuh ditata ulang."
+  ],
+  "social_proof": [
+   "Ribuan terjual, rating 4.8+ — ini kata pembelinya.",
+   "Alat dapur kecil yang paling laku, kata ulasan pembeli.",
+   "Yang lagi dicari anak kos: alat dapur rating tinggi.",
+   "Barang receh gini sering diremehin, padahal ratingnya 4.8+.",
+   "Alat dapur kecil lagi rame — ulasannya ribuan, ratingnya tinggi.",
+   "5 alat dapur yang paling sering muncul di ulasan bintang 5."
+  ],
+  "storytelling": [
+   "Scroll ulasan pembeli, alat dapur ini muncul terus.",
+   "Timeline rame bahas ulasan alat dapur anak kos.",
+   "Ada yang notice alat dapur ini? Ulasannya rame banget.",
+   "POV: kamu scroll ulasan pembeli sebelum checkout.",
+   "Kemarin ada yang nanya: alat dapur apa yang ulasannya paling bagus?",
+   "Gara-gara dapur sempit, semua barang numpuk di satu sudut.",
+   "Sadar satu hal soal dapur kos: yang rapi itu yang ada tempatnya."
+  ],
+  "validasi_mental": [
+   "Kalau kamu ngekos, baca ulasan pembeli dulu sebelum beli.",
+   "Capek makan luar terus? Ulasan pembeli ini bisa bantu.",
+   "Masak sekali sehari? Cek dulu kata pembeli soal ukurannya.",
+   "Nggak sendirian kok kalau kamu tim baca ulasan dulu.",
+   "Masak buat satu orang doang? Ukurannya cek di ulasan.",
+   "Capek dapur berantakan terus padahal udah diberesin tiap pagi."
+  ],
+  "transformasi": [
+   "Dulu asal beli, sekarang baca ulasan dulu — bedanya kerasa.",
+   "Kos kecil bukan alasan dapur berantakan — kata ulasan pembeli.",
+   "Dari yang tadinya mager masak, jadi rajin — kata yang udah beli.",
+   "Coba beresin dapur pas lagi buru-buru — bedanya langsung kerasa."
+  ],
+  "urgency": [
+   "Harga di Shopee berubah tiap hari — cek ulasannya selagi masih segini.",
+   "Kalau udah nemu yang ratingnya bagus, jangan kelamaan mikir.",
+   "Flash sale bisa balik ke harga normal kapan aja — intip ulasannya dulu."
+  ],
+  "controversy": [
+   "Unpopular opinion: rating 4.8+ belum tentu cocok buat kamu.",
+   "Hot take: dapur rapi itu soal kebiasaan, bukan soal rating tinggi.",
+   "Mitos: alat dapur harus mahal biar awet. Ulasan bilang beda.",
+   "Unpopular opinion: alat dapur mahal belum tentu awet."
+  ]
+ }
+}

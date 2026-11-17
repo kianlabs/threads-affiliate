@@ -1,1 +1,81 @@
-{"_meta": {"audience": "Indonesian 16-30 yo", "category": "kebersihan", "language": "id-ID", "note": "v5.0 (16 Nov 2026, aturan Kyan 18:50): hook FOKUS REVIEW — ulasan/rating pembeli di listing ('menurut ulasan pembeli', 'rating 4.8+, ribuan terjual'). TANPA nama produk, TANPA klaim pemakaian pribadi, TANPA garansi, TANPA kata-kata terlarang (aturan 18:50). Hook pendek (<=80 karakter).", "tone": "casual-genz", "version": "5.0-hl"}, "hooks": {"edukasi": ["Cara baca ulasan pembeli sebelum beli alat bersih.", "Rating tinggi saja nggak cukup — cek ulasannya dulu.", "Rating cuma angka — ulasan pembeli yang cerita."], "hook_pancingan": ["Kenapa alat bersih ini dipuji terus di ulasan pembeli?", "Yang paling sering dipuji pembeli dari alat pel kecil?", "Rating 4.8+, ribuan terjual — apa kata pembelinya?"], "problem_solving": ["Ulasan pembeli paling jujur soal daya bersihnya.", "Bingung pilih pembersih? Baca ulasan pembelinya dulu.", "Yang dikeluhin pembeli biasanya soal bau, bukan harga."], "social_proof": ["Ribuan terjual, rating 4.8+ — ini kata pembelinya.", "Alat bersih kecil yang paling laku, kata ulasan pembeli.", "Yang lagi dicari anak kos: pembersih rating tinggi."], "storytelling": ["Scroll ulasan pembeli, alat bersih ini muncul terus.", "Timeline rame bahas ulasan alat bersih anak kos.", "Ada yang notice pel kecil ini? Ulasannya rame banget."], "validasi_mental": ["Mager bersih-bersih? Baca ulasan pembeli dulu sebelum beli.", "Baru ngekos? Ulasan pembeli ini bisa bantu.", "Kosmu kecil? Cek dulu kata pembeli soal ukurannya."]}}
+{
+ "_meta": {
+  "audience": "Indonesian 16-30 yo",
+  "category": "kebersihan",
+  "language": "id-ID",
+  "note": "v5.0 (16 Nov 2026, aturan Kyan 18:50): hook FOKUS REVIEW — ulasan/rating pembeli di listing ('menurut ulasan pembeli', 'rating 4.8+, ribuan terjual'). TANPA nama produk, TANPA klaim pemakaian pribadi, TANPA garansi, TANPA kata-kata terlarang (aturan 18:50). Hook pendek (<=80 karakter). v5.1 (16 Nov 2026, aditif — v5 utuh dipertahankan): +3 style baru (transformasi, urgency, controversy) + 2 varian/style lama; semua hook berjangkar ulasan/rating/terjual (brief v5). Sumber: msyamsularif hook-patterns/angle-library, rediumvex viral-hooks-skill (100 formula) + social-captions hook library, d4ncboz 9-style, syadagentic v7 (SE-SIMPEL, Shopping Psychology, Problem-Solving List), akbarseft86 (Unpopular opinion / Hard truth / POV / STOP-START). Semua hook lolos check_draft.py v5 + dedup overlap <=0.6. v5.2 (18 Nov 2026, aditif): +12 hook/kategori dari Sekolah76/syadagentic (diadaptasi ke aturan v5.1: tanpa nama produk/affiliate/komisi/klaim pribadi; caps dihapus per keputusan Kyan 17 Nov 23:30).",
+  "tone": "casual-genz",
+  "version": "5.2-hl"
+ },
+ "hooks": {
+  "edukasi": [
+   "Cara baca ulasan pembeli sebelum beli alat bersih.",
+   "Rating tinggi saja nggak cukup — cek ulasannya dulu.",
+   "Rating cuma angka — ulasan pembeli yang cerita.",
+   "Tiga hal yang dicek pembeli dari ulasan alat bersih.",
+   "Alat bersih yang bagus itu yang dipuji ulasan, bukan iklannya.",
+   "Se-simpel bersihin kamar mandi, tapi banyak yang salah caranya",
+   "Susah bersihin kamar mandi kos itu bukan karena kecil, tapi salah alatnya."
+  ],
+  "hook_pancingan": [
+   "Kenapa alat bersih ini dipuji terus di ulasan pembeli?",
+   "Yang paling sering dipuji pembeli dari alat pel kecil?",
+   "Rating 4.8+, ribuan terjual — apa kata pembelinya?",
+   "Kenapa lantai udah dipel tapi tetap lengket? Ulasan bilang salah alat.",
+   "STOP gosok kerak pakai spons kasar — ulasan bilang permukaannya kalah.",
+   "Nyesel banget baru tau cara baca ulasan sebelum beli alat bersih-bersih.",
+   "Barang receh gini sering diremehin… sampai kamar mandi jadi bersih sendiri."
+  ],
+  "problem_solving": [
+   "Ulasan pembeli paling jujur soal daya bersihnya.",
+   "Bingung pilih pembersih? Baca ulasan pembelinya dulu.",
+   "Yang dikeluhin pembeli biasanya soal bau, bukan harga.",
+   "Pembeli paling sering ngeluhin soal bau — cek ulasannya.",
+   "Pel bau apek padahal baru dicuci — ulasan bilang ini biangnya.",
+   "5 masalah sepele yang bikin kamar mandi kos licin terus.",
+   "Kalau kamu ngalamin ini, kamar mandimu butuh dibersihin ulang."
+  ],
+  "social_proof": [
+   "Ribuan terjual, rating 4.8+ — ini kata pembelinya.",
+   "Alat bersih kecil yang paling laku, kata ulasan pembeli.",
+   "Yang lagi dicari anak kos: pembersih rating tinggi.",
+   "Yang lagi rame di timeline: ulasan alat bersih kecil.",
+   "Pel putar lagi rame — ulasan bilang gampang diperas.",
+   "5 alat bersih-bersih yang paling sering muncul di ulasan bintang 5."
+  ],
+  "storytelling": [
+   "Scroll ulasan pembeli, alat bersih ini muncul terus.",
+   "Timeline rame bahas ulasan alat bersih anak kos.",
+   "Ada yang notice pel kecil ini? Ulasannya rame banget.",
+   "POV: pulang kerja, kos berantakan, langsung cek ulasan alat pel.",
+   "Ada yang nanya pel apa yang gampang diperas? Ulasan jawab.",
+   "Gara-gara lantai basah terus, tiap jalan jadi hati-hati.",
+   "Sadar satu hal soal kamar mandi kos: yang bersih itu yang gampang dibilas."
+  ],
+  "validasi_mental": [
+   "Mager bersih-bersih? Baca ulasan pembeli dulu sebelum beli.",
+   "Baru ngekos? Ulasan pembeli ini bisa bantu.",
+   "Kosmu kecil? Cek dulu kata pembeli soal ukurannya.",
+   "Bersih-bersih ketunda terus? Ulasan pembeli relate banget.",
+   "Capek bersih-bersih tapi kos tetap kotor? Cek kata pembeli.",
+   "Capek kamar mandi licin terus padahal udah dipel tiap pagi."
+  ],
+  "transformasi": [
+   "Bau apek dulu nempel di kos, sekarang hilang — kata ulasan.",
+   "Dari yang tadinya bau apek — ulasan bilang sekarang segar.",
+   "Lantai lengket dulu, sekarang keset — ulasan yang bilang.",
+   "Coba bersihin kamar mandi pas lagi buru-buru — bedanya langsung kerasa."
+  ],
+  "urgency": [
+   "Varian yang paling laris biasanya cepat habis — cek ulasannya dulu.",
+   "Bersih-bersih nunggu niat doang nggak jalan — ulasan bilang mulai dari alat.",
+   "Harga hari ini belum tentu sama besok — cek ulasan sebelum berubah."
+  ],
+  "controversy": [
+   "Mitos: pembersih wangi berarti bersih. Ulasan bilang beda.",
+   "Unpopular opinion: alat bersih murah bisa awet — kata ulasan.",
+   "Hot take: pel yang bagus itu yang gampang diperas — kata ulasan.",
+   "Unpopular opinion: alat bersih-bersih mahal belum tentu awet."
+  ]
+ }
+}
