@@ -89,26 +89,26 @@ def verify_identity(page) -> bool:
     return page.get_by_text("Edit profile", exact=False).count() > 0
 
 
-def open_reply_composer(page, timeout_ms: int = 15000) -> dict:
-    """Buka composer reply di halaman postingan yang sedang dibuka.
+def open_reply_composer(page, timeout_ms: int = 20000) -> dict:
+    """Buka composer reply DIALOG di halaman postingan yang sedang dibuka.
 
-    Mencoba: (1) klik tombol reply (ikon balon / aria-label Reply/Balas)
-    lalu tunggu dialog + contenteditable; (2) bila tidak ada dialog,
-    pakai contenteditable inline di bawah postingan.
+    Klik tombol Reply postingan utama -> tunggu editor di dalam dialog.
+    Fallback: editor inline bila dialog tidak muncul.
     Return {'ok': bool, 'mode': 'dialog'|'inline', 'error': str|None}.
     """
-    # (1) tombol reply di postingan
+    # (1) tombol reply di postingan utama -> dialog
     btn = page.locator(
         '[aria-label*="Reply" i], [aria-label*="Balas" i]').first
-    if btn.count() > 0 and btn.is_visible():
+    if btn.count() > 0:
         try:
+            btn.scroll_into_view_if_needed(timeout=5000)
             btn.click(timeout=timeout_ms)
-            page.wait_for_selector('[role="dialog"]', timeout=timeout_ms)
-            page.wait_for_selector('[contenteditable="true"]',
-                                   timeout=timeout_ms)
+            page.wait_for_selector(
+                '[role="dialog"] [contenteditable="true"]',
+                timeout=timeout_ms)
             return {"ok": True, "mode": "dialog", "error": None}
         except Exception as e:
-            print(f"klik tombol reply gagal, coba inline: {type(e).__name__}")
+            print(f"dialog reply gagal dibuka, coba inline: {type(e).__name__}")
     # (2) editor inline di halaman postingan
     editors = page.locator('[contenteditable="true"]')
     if editors.count() > 0:
@@ -123,37 +123,92 @@ def open_reply_composer(page, timeout_ms: int = 15000) -> dict:
                      "maupun editor inline)"}
 
 
-def type_reply(page, text: str) -> dict:
-    """Ketik teks ke editor reply yang sudah terbuka, verifikasi masuk."""
+def type_reply(page, text: str, mode: str) -> dict:
+    """Ketik teks ke editor reply yang sudah terbuka, verifikasi masuk.
+
+    Mode dialog: ketik langsung ke editor DI DALAM dialog (editor inline
+    di belakang dialog tidak boleh dipakai — teksnya tidak pindah).
+    Mode inline: pakai helper type_caption seperti sebelumnya.
+    """
+    if mode == "dialog":
+        ed = page.locator('[role="dialog"] [contenteditable="true"]').first
+        try:
+            ed.click(timeout=5000)
+        except Exception as e:
+            return {"ok": False, "typed": "",
+                    "error": f"editor dialog tidak bisa diklik: {e}"}
+        page.keyboard.type(text, delay=10)
+        page.wait_for_timeout(1000)
+        probe = text[:40]
+        ok = page.locator('[role="dialog"]').get_by_text(
+            probe, exact=False).count() > 0
+        return {"ok": ok, "typed": text if ok else "",
+                "error": None if ok else "teks tidak masuk ke editor dialog"}
     sys.path.insert(0, str(BASE))
     from tools.video_attach import type_caption
     return type_caption(page, text)
 
 
+def reply_count(page) -> int | None:
+    """Angka balasan di bawah postingan utama (tombol angka ke-2 di baris
+    aksi postingan: like, reply, repost, share). None bila tidak terbaca."""
+    try:
+        nums = page.get_by_role("button", name=re.compile(r"^\d+$")).all()
+        if len(nums) >= 2:
+            return int(nums[1].inner_text().strip())
+    except Exception:
+        pass
+    return None
+
+
 def submit_reply(page, mode: str) -> dict:
-    """Tekan tombol kirim reply. Hanya dipanggil dengan --live."""
+    """Kirim reply. Hanya dipanggil dengan --live.
+
+    PELAJARAN 17 Nov 2026 ~14:30 (3x percobaan @edhishmsa): composer inline
+    TIDAK PUNYA tombol Post, dan tombol 'Reply' HANYA membuka dialog —
+    2x live 'submit OK' ternyata TIDAK ADA yang terkirim (teks cuma nyangkut
+    di editor). Yang jalan: Ctrl+Enter di dalam editor inline — editor
+    langsung kosong dan angka balasan naik 67 -> 68. Mode dialog tetap
+    pakai tombol Post (exact match supaya tidak ketukar 'Post Options').
+    """
     if mode == "dialog":
-        dialog = page.locator('[role="dialog"]').first
-        btn = dialog.locator(
-            'div[role="button"]:has-text("Reply"), button:has-text("Reply")'
-        ).first
-    else:
-        btn = page.locator(
-            'div[role="button"]:has-text("Reply"), button:has-text("Reply")'
-        ).first
-    if btn.count() == 0 or not btn.is_visible():
-        return {"ok": False, "error": "Tombol kirim Reply tidak ditemukan"}
-    btn.click(timeout=10000)
+        scope = page.locator('[role="dialog"]').first
+        btn = scope.get_by_role("button", name="Post", exact=True).first
+        if btn.count() == 0 or not btn.is_visible():
+            return {"ok": False, "error": "Tombol kirim Post tidak ditemukan"}
+        if not btn.is_enabled():
+            return {"ok": False,
+                    "error": "Tombol Post masih nonaktif (teks kosong?)"}
+        btn.click(timeout=10000)
+        page.wait_for_timeout(5000)
+        if page.locator('[role="dialog"]').count() > 0:
+            return {"ok": False,
+                    "error": "Dialog masih terbuka setelah klik Post"}
+        return {"ok": True, "error": None}
+    # inline: Ctrl+Enter (satu-satunya cara kirim yang terbukti jalan)
+    page.keyboard.press("Control+Enter")
     page.wait_for_timeout(4000)
     return {"ok": True, "error": None}
 
 
-def verify_posted(page, url: str, text: str) -> bool:
-    """Muat ulang postingan target, cek potongan komen muncul di halaman."""
+def verify_posted(page, url: str, text: str, count_before) -> tuple[bool, str]:
+    """Verifikasi kirim: UTAMA pakai angka balasan (naik = terkirim).
+
+    Daftar balasan diurutkan 'Top' + virtualisasi, jadi pencarian teks
+    TIDAK BISA diandalkan (komen baru 0 interaksi tenggelam di bawah dan
+    tidak ter-render di DOM). Bila angka tidak terbaca, fallback ke
+    pencarian teks; bila itu pun gagal -> posted_unverified.
+    Return (ok, detail).
+    """
     if not safe_goto(page, url):
-        return False
+        return False, "postingan tidak bisa dimuat ulang"
+    count_after = reply_count(page)
+    if count_before is not None and count_after is not None:
+        detail = f"balasan {count_before} -> {count_after}"
+        return count_after > count_before, detail
     probe = text[:40]
-    return page.get_by_text(probe, exact=False).count() > 0
+    ok = page.get_by_text(probe, exact=False).count() > 0
+    return ok, "angka balasan tidak terbaca; verifikasi via teks"
 
 
 def record_history(url: str, text: str, status: str, reason: str) -> None:
@@ -205,6 +260,8 @@ def main() -> int:
             if not safe_goto(page, args.url):
                 print("BATAL: postingan target tidak bisa dibuka")
                 return 4
+            count_before = reply_count(page)
+            print("angka balasan sebelum kirim:", count_before)
             page.screenshot(path=str(SHOTS / "31-target.png"))
 
             print("== buka composer reply ==")
@@ -215,7 +272,7 @@ def main() -> int:
             page.screenshot(path=str(SHOTS / "32-composer.png"))
 
             print("== ketik teks ==")
-            typed = type_reply(page, args.text)
+            typed = type_reply(page, args.text, res["mode"])
             print("typed:", typed)
             if not typed["ok"]:
                 return 5
@@ -233,12 +290,14 @@ def main() -> int:
                 record_history(args.url, args.text, "failed", sent["error"])
                 return 6
             page.screenshot(path=str(SHOTS / "34-sent.png"))
-            ok = verify_posted(page, args.url, args.text)
-            print("verifikasi tampil di postingan:", ok)
+            ok, detail = verify_posted(page, args.url, args.text,
+                                       count_before)
+            print("verifikasi:", ok, "-", detail)
             record_history(
                 args.url, args.text,
                 "posted" if ok else "posted_unverified",
-                "" if ok else "terkirim tapi tidak tampil saat verifikasi")
+                detail if ok else
+                "terkirim tapi tidak tampil saat verifikasi")
             print("LIVE SELESAI — status:",
                   "posted" if ok else "posted_unverified")
             return 0 if ok else 7
