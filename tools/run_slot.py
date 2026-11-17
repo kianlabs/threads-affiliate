@@ -74,13 +74,19 @@ def load_config(path: Path) -> dict:
 # slot berikutnya tidak double-post.
 
 def slugify_product(product: str) -> str:
-    """Slug produk dari kata pertama nama produk (huruf+angka, maks 16).
-    Contoh: 'Kikkoman Soy ...' -> 'kikkoman'; 'BONBOX Mop ...' -> 'bonbox'.
-    Dua baris historis di performance.csv memakai slug buatan tangan
-    ('bonboxmop') — dipertahankan apa adanya, tidak diubah."""
-    first = (product or "").split()[0] if (product or "").split() else "produk"
-    slug = re.sub(r"[^a-z0-9]", "", first.lower())
-    return slug[:16] or "produk"
+    """Slug produk dari NAMA LENGKAP (kata dipisah '-', maks 30).
+    Contoh: 'ECOCO Cup Washing Brush' -> 'ecoco-cup-washing-brush';
+    'ECOCO Mop Holder' -> 'ecoco-mop-holder'.
+    Alasan (17 Nov 2026): slug kata pertama bikin tabrakan — semua produk
+    'ECOCO ...' jadi 'ecoco', sehingga content_id dua produk berbeda di hari
+    yang sama identik dan slot kedua dibatalkan guard idempotency (kejadian
+    17 Nov 12:30, ECOCO Mop Holder). Dua baris historis di performance.csv
+    memakai slug buatan tangan ('bonboxmop') — dipertahankan apa adanya,
+    tidak diubah."""
+    words = (product or "").split() or ["produk"]
+    slug = "-".join(re.sub(r"[^a-z0-9]", "", w.lower()) for w in words)
+    slug = re.sub(r"-+", "-", slug).strip("-")
+    return slug[:30] or "produk"
 
 
 def parse_link_ids(affiliate_link: str) -> tuple[str | None, str | None]:
