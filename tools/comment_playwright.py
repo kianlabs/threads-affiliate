@@ -17,6 +17,11 @@ Aturan keras:
 - Fail-closed: identitas bukan @shopee_harian, composer tidak ketemu, atau
   teks tidak terverifikasi -> BATAL, exit non-zero, tidak ada yang terkirim.
 - Live dicatat ke data/comment_history.json (append; entri lama byte-utuh).
+- 17 Nov 2026: --image (pilot atas perintah Kyan) — komen boleh bawa 1
+  foto/video via tombol "Attach media" di composer balasan; fail-closed
+  bila attach gagal (file tidak ada / tombol tidak ada / preview tidak
+  muncul). Terbukti via probe: klik Attach media -> input file muncul
+  (accept image/* + video/*).
 
 Pemakaian (dari ~/threads-affiliate-system, di PC):
   xvfb-run python3 tools/comment_playwright.py --url <post_url> --text "<teks>"
@@ -43,11 +48,18 @@ BANNED = ("affiliate", "komisi", "commission", "shopee.co.id", "s.shopee.co.id",
           "punyaku", "aku pakai", "aku pake", "udah aku coba", "paling jujur",
           "paling murah", "dijamin", "pasti ampuh", "checkout", "beli di",
           "keranjang kuning")
+# URL affiliate: hanya lolos bila --allow-link (komen ber-link yang sudah
+# di-approve Kyan secara eksplisit; default tetap dilarang). Perhatian:
+# parameter affiliate_id di dalam URL mengandung kata "affiliate", jadi
+# pemeriksaan guardrail melepas token URL utuh dulu — prosa di luar URL
+# tetap diperiksa penuh (kata "affiliate" di prosa tetap diblokir).
 
 
-def check_guardrail(text: str) -> dict:
+def check_guardrail(text: str, allow_link: bool = False) -> dict:
     """Cek teks komen. Return {'ok': bool, 'error': str|None}."""
     low = text.lower()
+    if allow_link:
+        low = re.sub(r"https?://\S+", " ", low)
     for bad in BANNED:
         if bad in low:
             return {"ok": False, "error": f"Kata terlarang di komen: {bad!r}"}
@@ -121,6 +133,86 @@ def open_reply_composer(page, timeout_ms: int = 20000) -> dict:
     return {"ok": False, "mode": "",
             "error": "Composer reply tidak ditemukan (tidak ada tombol Reply "
                      "maupun editor inline)"}
+
+
+def attach_media(page, path: str, mode: str,
+                 timeout_ms: int = 20000) -> dict:
+    """Attach 1 foto/video ke composer reply yang sudah terbuka. FAIL-CLOSED.
+
+    Pola dari probe 17 Nov 2026: klik tombol "Attach media" -> input
+    file (hidden) muncul dengan accept image/* + video/* -> set_input_files
+    -> preview <img src="blob:..."> (foto) atau <video> muncul di composer.
+    File chooser native yang ikut terbuka langsung ditolak (set_files([]))
+    supaya klik tidak menggantung; input DOM-nya tetap muncul.
+    Return {'ok': bool, 'error': str|None, 'preview': str|None}.
+    """
+    p = Path(path)
+    if not p.exists():
+        return {"ok": False, "error": f"File media tidak ada: {path}",
+                "preview": None}
+    if p.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".avif",
+                                ".mp4", ".mov", ".webm"):
+        return {"ok": False,
+                "error": f"Ekstensi media tidak didukung: {p.suffix}",
+                "preview": None}
+    try:
+        page.on("filechooser", lambda fc: fc.set_files([]))
+    except Exception:
+        pass
+    scope = (page.locator('[role="dialog"]').first if mode == "dialog"
+             else page)
+    btn = scope.locator('[aria-label="Attach media"]').first
+    if btn.count() == 0:
+        btn = page.locator('[aria-label="Attach media"]').first
+    if btn.count() == 0:
+        return {"ok": False,
+                "error": "Tombol Attach media tidak ditemukan di composer",
+                "preview": None}
+    try:
+        btn.click(timeout=5000)
+    except Exception as e:
+        return {"ok": False,
+                "error": f"Klik Attach media gagal: {type(e).__name__}",
+                "preview": None}
+    deadline = time.time() + timeout_ms / 1000
+    target = None
+    while time.time() < deadline:
+        for inp in page.locator('input[type="file"]').all():
+            try:
+                acc = inp.get_attribute("accept") or ""
+            except Exception:
+                continue
+            if "image/" in acc or "video/" in acc:
+                target = inp
+                break
+        if target is not None:
+            break
+        time.sleep(0.5)
+    if target is None:
+        return {"ok": False,
+                "error": "Input file media tidak muncul setelah klik "
+                         "Attach media",
+                "preview": None}
+    try:
+        target.set_input_files(str(p))
+    except Exception as e:
+        return {"ok": False,
+                "error": f"set_input_files gagal: {type(e).__name__}",
+                "preview": None}
+    deadline = time.time() + timeout_ms / 1000
+    while time.time() < deadline:
+        try:
+            blobs = page.locator('img[src^="blob:"]').count()
+            vids = scope.locator("video").count()
+            if blobs > 0 or vids > 0:
+                return {"ok": True, "error": None,
+                        "preview": f"blob-img={blobs} video={vids}"}
+        except Exception:
+            pass
+        time.sleep(1)
+    return {"ok": False,
+            "error": "File ter-set tapi preview media tidak muncul",
+            "preview": None}
 
 
 def type_reply(page, text: str, mode: str) -> dict:
@@ -211,10 +303,13 @@ def verify_posted(page, url: str, text: str, count_before) -> tuple[bool, str]:
     return ok, "angka balasan tidak terbaca; verifikasi via teks"
 
 
-def record_history(url: str, text: str, status: str, reason: str) -> None:
+def record_history(url: str, text: str, status: str, reason: str,
+                   image: str | None = None) -> None:
     entry = {"date": time.strftime("%Y-%m-%d"), "platform": "threads",
              "post_url": url, "text": text, "status": status,
              "reason": reason, "via": "playwright"}
+    if image:
+        entry["image"] = image
     history = []
     if HISTORY_PATH.exists():
         try:
@@ -231,9 +326,17 @@ def main() -> int:
     ap.add_argument("--text", required=True, help="Teks komen (sudah approve)")
     ap.add_argument("--live", action="store_true",
                     help="KIRIM BENARAN. Tanpa flag ini = dry-run.")
+    ap.add_argument("--allow-link", action="store_true",
+                    help="Izinkan URL affiliate di teks (hanya untuk komen "
+                         "ber-link yang sudah di-approve Kyan). Default: "
+                         "URL tetap dilarang guardrail.")
+    ap.add_argument("--image", default=None,
+                    help="Path 1 foto/video untuk di-attach ke komen "
+                         "(pilot 17 Nov 2026). Relatif ke repo bila bukan "
+                         "path absolut.")
     args = ap.parse_args()
 
-    g = check_guardrail(args.text)
+    g = check_guardrail(args.text, allow_link=args.allow_link)
     print("guardrail:", g)
     if not g["ok"]:
         return 2
@@ -270,9 +373,31 @@ def main() -> int:
             if not res["ok"]:
                 return 4
             page.screenshot(path=str(SHOTS / "32-composer.png"))
+            mode = res["mode"]
+
+            if args.image:
+                img_path = Path(args.image)
+                if not img_path.is_absolute():
+                    img_path = BASE / img_path
+                print("== attach media ==")
+                att = attach_media(page, str(img_path), mode)
+                print("attach:", att)
+                if not att["ok"]:
+                    print("BATAL: attach media gagal (fail-closed)")
+                    return 5
+                # Attach media bisa memindahkan composer inline ke dialog
+                # (preview media hanya muat di dialog) — deteksi ulang mode
+                # sebelum ketik/kirim supaya editor + tombol yang dipakai
+                # adalah yang di dialog.
+                if page.locator(
+                        '[role="dialog"] [contenteditable="true"]'
+                        ).count() > 0:
+                    mode = "dialog"
+                    print("mode berubah ke dialog setelah attach")
+                page.screenshot(path=str(SHOTS / "32b-attached.png"))
 
             print("== ketik teks ==")
-            typed = type_reply(page, args.text, res["mode"])
+            typed = type_reply(page, args.text, mode)
             print("typed:", typed)
             if not typed["ok"]:
                 return 5
@@ -284,7 +409,7 @@ def main() -> int:
                 return 0
 
             print("== LIVE: kirim reply ==")
-            sent = submit_reply(page, res["mode"])
+            sent = submit_reply(page, mode)
             print("submit:", sent)
             if not sent["ok"]:
                 record_history(args.url, args.text, "failed", sent["error"])
@@ -297,7 +422,8 @@ def main() -> int:
                 args.url, args.text,
                 "posted" if ok else "posted_unverified",
                 detail if ok else
-                "terkirim tapi tidak tampil saat verifikasi")
+                "terkirim tapi tidak tampil saat verifikasi",
+                image=args.image)
             print("LIVE SELESAI — status:",
                   "posted" if ok else "posted_unverified")
             return 0 if ok else 7

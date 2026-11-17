@@ -28,9 +28,18 @@ import json
 import os
 from pathlib import Path
 
-BRAVE_COOKIES = (
-    Path.home() / ".config/BraveSoftware/Brave-Browser/Default/Cookies"
-)
+# 17 Nov 2026: Brave yang jalan di PC ini memakai profil Brave-Origin, BUKAN
+# Brave-Browser (fd proses brave -> ~/.config/BraveSoftware/Brave-Origin/).
+# Cookies di Brave-Browser/Default terakhir ditulis 16 Okt 2026 (basi) — ekstraksi
+# dari sana mengembalikan sesi lama (kyankian) meski Kyan sudah login sebagai
+# @shopee_harian. Coba Brave-Origin dulu, fallback ke Brave-Browser.
+def _brave_cookies_path() -> Path:
+    origin = Path.home() / ".config/BraveSoftware/Brave-Origin/Default/Cookies"
+    legacy = Path.home() / ".config/BraveSoftware/Brave-Browser/Default/Cookies"
+    return origin if origin.exists() else legacy
+
+
+BRAVE_COOKIES = _brave_cookies_path()
 DEFAULT_COOKIES_DIR = Path.home() / ".threads_poster" / "cookies"
 
 
