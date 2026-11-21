@@ -1,0 +1,5 @@
+name: shopee-affiliate-system
+title: Shopee Affiliate System — otomasi Shopee ke Threads + Facebook
+description: Operate, debug, and extend Kyan's Shopee affiliate automation to Threads (5 accounts, simultaneous video posts, outbound comments, engagement bait, Facebook Reels) — schedules, guardrails, exit codes, verification probes, watchdog auto-retry, and proven recovery for SSH, Playwright, and identity failures.
+category: Business
+include_in_prompt: false
